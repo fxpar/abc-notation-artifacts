@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entraînement Accords Guitare & Ukulélé</title>
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .chord-card {
+            transition: all 0.3s ease;
+            border: 2px solid #dee2e6;
+        }
+        .chord-card.active {
+            border-color: #0d6efd;
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.2);
+        }
+        /* Style pour forcer une taille correcte aux composants uke-chord */
+        uke-chord {
+            display: block;
+            width: 120px;
+            margin: 0 auto;
+        }
+        .metronome-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #dee2e6;
+            display: inline-block;
+            margin: 0 4px;
+            transition: background-color 0.1s ease;
+        }
+        .metronome-dot.active {
+            background-color: #0d6efd;
+        }
+        .metronome-dot.accent {
+            background-color: #dc3545;
+        }
+		
+		
+		/* --- STYLES MODE NUIT --- */
+			body.dark-mode {
+				background-color: #121212 !important;
+				color: #e0e0e0 !important;
+			}
+
+			body.dark-mode .card, 
+			body.dark-mode .accordion-item, 
+			body.dark-mode .accordion-body {
+				background-color: #1e1e1e !important;
+				color: #e0e0e0 !important;
+				border-color: #2d2d2d !important;
+			}
+
+			body.dark-mode .form-select, 
+			body.dark-mode .form-control {
+				background-color: #2d2d2d !important;
+				color: #ffffff !important;
+				border-color: #404040 !important;
+			}
+
+			body.dark-mode .accordion-button {
+				background-color: #2d2d2d !important;
+				color: #ffffff !important;
+			}
+			body.dark-mode .accordion-button::after {
+				filter: invert(1); /* Inverse la flèche de l'accordéon Bootstrap */
+			}
+
+			/* Astuce magique pour le schéma d'accord (SVG) et les partitions */
+			body.dark-mode uke-chord,
+			body.dark-mode #notation-render {
+				filter: invert(0.9) hue-rotate(180deg);
+			}
+    </style>
+</head>
+<body>
+<div class="position-absolute top-0 end-0 p-3" style="z-index: 1050;">
+    <button id="btn-dark-mode" class="btn btn-outline-secondary rounded-circle shadow-sm" title="Mode Nuit">
+        <i class="bi bi-moon-fill" id="dark-mode-icon"></i>
+    </button>
+</div>
+
+<div class="container-fluid py-4 max-width-md" style="max-width: 600px;">
+    <h2 class="text-center mb-4 font-weight-bold text-primary"><i class="bi bi-music-note-list"></i> Chord Trainer</h2>
+
+    <div class="row g-3 text-center mb-4">
+        <div class="col-6">
+            <div class="card chord-card active p-3 h-100">
+                <span class="badge bg-primary mb-2">ACTUEL</span>
+                <h3 id="current-chord-name" class="fw-bold">-</h3>
+                <div id="current-chord-container" class="d-flex justify-content-center align-items-center" style="min-height: 150px;">
+                    </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card chord-card p-3 h-100 bg-light">
+                <span class="badge bg-secondary mb-2">SUIVANT</span>
+                <h3 id="next-chord-name" class="fw-bold text-muted">-</h3>
+                <div id="next-chord-container" class="d-flex justify-content-center align-items-center" style="min-height: 150px; opacity: 0.7;">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card text-center p-3 mb-4 shadow-sm">
+        <div id="metronome-visual" class="mb-2">
+            </div>
+        <div class="d-flex justify-content-between text-muted small px-3">
+            <span id="info-status">Prêt</span>
+            <span id="info-loop">Tour : 0/0</span>
+        </div>
+    </div>
+
+    <div class="d-grid gap-2 mb-4">
+        <button id="btn-start" class="btn btn-success btn-lg shadow"><i class="bi bi-play-fill"></i> Démarrer l'entraînement</button>
+        <button id="btn-stop" class="btn btn-danger btn-lg shadow d-none"><i class="bi bi-stop-fill"></i> Arrêter</button>
+    </div>
+
+    <div class="accordion mb-4" id="paramAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseParams">
+                    <i class="bi bi-gear-fill me-2"></i> Configuration des paramètres
+                </button>
+            </h2>
+            <div id="collapseParams" class="accordion-collapse collapse" data-bs-parent="#paramAccordion">
+                <div class="accordion-body bg-white">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Instrument</label>
+                        <select id="param-instrument" class="form-select">
+                            <option value="ukulele" selected>Ukulélé (Défaut)</option>
+                            <option value="guitar">Guitare</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Niveau / Catégorie</label>
+                        <div id="category-checkboxes">
+                            <div class="form-check">
+                                <input class="form-check-input cat-check" type="checkbox" value="debutant" id="cat-deb" checked>
+                                <label class="form-check-label" for="cat-deb">Débutant</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input cat-check" type="checkbox" value="intermediaire" id="cat-int" checked>
+                                <label class="form-check-label" for="cat-int">Intermédiaire</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input cat-check" type="checkbox" value="avance" id="cat-av">
+                                <label class="form-check-label" for="cat-av">Avancé</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="param-custom-list" class="form-label fw-bold">Liste personnalisée d'accords (Optionnel)</label>
+                        <input type="text" id="param-custom-list" class="form-control" placeholder="Ex: C, G, Am, F (Séparez par des virgules)">
+                        <div class="form-text">Laisse vide pour utiliser toute la catégorie sélectionnée.</div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="param-bpm" class="form-label fw-bold">Tempo (BPM)</label>
+                            <input type="number" id="param-bpm" class="form-control" value="80" min="40" max="240">
+                        </div>
+                        <div class="col-6">
+                            <label id="param-beats" class="form-label fw-bold">Mesure</label>
+                            <select id="param-time-sig" class="form-select">
+                                <option value="4" selected>4 Temps (4/4)</option>
+                                <option value="3">3 Temps (3/4)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="param-random" checked>
+                        <label class="form-check-label fw-bold" for="param-random">Défilement aléatoire</label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fin de l'exercice</label>
+                        <select id="param-loop-mode" class="form-select mb-2">
+                            <option value="loop" selected>En boucle (Infini)</option>
+                            <option value="once">Faire la liste 1 seule fois</option>
+                            <option value="count">Nombre précis d'accords</option>
+                        </select>
+                        <div id="div-precise-count" class="d-none">
+                            <input type="number" id="param-precise-count" class="form-control" value="10" min="1" placeholder="Nombre de changements">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (!Element.prototype.replaceChildren) {
+        Element.prototype.replaceChildren = function(...newChildren) {
+            while (this.firstChild) {
+                this.removeChild(this.firstChild);
+            }
+            this.append(...newChildren);
+        };
+    }
+</script>
+
+<!-- <script src="https://pianosnake.github.io/uke-chord/uke-chord.js"></script> -->
+<script src="./js/uke-chord.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script> -->
+<script src="./js/bootstrap.min.js"></script>
+
+<script>
+    // --- BASE DE DONNÉES DES ACCORDS (Structurée par Instrument et Catégorie) ---
+    const chordLibrary = {
+        ukulele: {
+            debutant: [
+                { name: "C", frets: "0003", position: "0" },   // Do majeur
+				{ name: "Am", frets: "2000", position: "0" },  // La mineur
+				{ name: "F", frets: "2010", position: "0" },   // Fa majeur
+				{ name: "G", frets: "0232", position: "0" },   // Sol majeur
+				{ name: "A", frets: "2100", position: "0" }    // La majeur
+            ],
+            intermediaire: [
+                { name: "Dm", frets: "2210" },
+                { name: "Em", frets: "0432" },
+                { name: "D", frets: "2220" },
+                { name: "Bm", frets: "4222" },
+                { name: "Bm", frets: "4222", barre: "2222" },
+				{ name: "G7", frets: "0212", position: "0" },  // Sol 7 (Dominante)
+				{ name: "C7", frets: "0001", position: "0" },  // Do 7 (Dominante)
+				{ name: "D7", frets: "2020", position: "0"},  // Ré 7 (Dominante)
+				{ name: "E7", frets: "1202", position: "0" },  // Mi 7 (Dominante)
+				{ name: "C (Haut)", frets: "5433", position: "3" }, // Do majeur en haut du manche (Barré case 3)
+				{ name: "C (Haut)", frets: "5433", position: "3", barre: "3333" }, // Do majeur en haut du manche (Barré case 3)
+				{ name: "G (Haut)", frets: "7772", position: "2" } // Sol majeur en haut du manche (Barré case 2)
+            ],
+            avance: [
+                { name: "Bb", frets: "3211", barre: "1111" },
+                { name: "B", frets: "4322" },
+                { name: "B", frets: "4322", barre: "2222" },
+                { name: "C#m", frets: "6444" },
+                { name: "C#m", frets: "6444", barre: "4444" },
+				{ name: "Cmaj7", frets: "0002", position: "0" }, // Do 7ème majeure (Très doux, jazz)
+				{ name: "G6", frets: "0202", position: "0" },    // Sol 6 (Sonorité swing/hawaienne)
+				{ name: "Cdim7", frets: "2323", position: "0" }, // Do diminué 7 (Tension jazz/blues)
+				{ name: "Gsus4", frets: "0233", position: "0" }, // Sol suspendu 4 (Moderne, suspendu)
+				{ name: "A7sus4", frets: "0200", position: "0" },// La 7 suspendu 4
+				{ name: "Bb7", frets: "1211", position: "1", barre: "1111" },   // Si bémol 7 (Forme de barré jazz mobile)
+				{ name: "Bb7", frets: "1211", position: "1" },   // Si bémol 7 (Forme de barré jazz mobile)
+				{ name: "F#m7b5", frets: "2423", position: "2" } // Fa dièse mineur 7 quinte bémol (Le fameux accord demi-diminué)
+            ]
+        },
+        guitar: {
+			debutant: [
+				{ name: "Em", frets: "022000", position: "0" }, // Mi mineur
+				{ name: "G", frets: "320003", position: "0" },  // Sol majeur
+				{ name: "C", frets: "x32010", position: "0" },  // Do majeur
+				{ name: "D", frets: "xx0232", position: "0" },  // Ré majeur
+				{ name: "Am", frets: "x02210", position: "0" }  // La mineur
+			],
+			intermediaire: [
+				{ name: "E", frets: "022100", position: "0" },  // Mi majeur
+				{ name: "A", frets: "x02220", position: "0" },  // La majeur
+				{ name: "Dm", frets: "xx0231", position: "0" }, // Ré mineur
+				{ name: "Fmaj7", frets: "xx3210", position: "0" }, // Fa majeur 7 (alternative au barré)
+				{ name: "B7", frets: "x21202", position: "0" }  // Si 7e
+			],
+			avance: [
+				{ name: "F", frets: "133211", position: "1" },  // Fa majeur (grand barré case 1)
+				{ name: "Bm", frets: "x13331", position: "2" }, // Si mineur (barré en case 2)
+				{ name: "B", frets: "x13331", position: "2" },  // Si majeur (barré en case 2)
+				{ name: "C#m", frets: "x13321", position: "4" },// Do dièse mineur (barré en case 4)
+				{ name: "G7 (Barré)", frets: "353433", position: "3" } // Sol 7 (barré en case 3)
+			]
+		}
+    };
+
+    // --- VARIABLES DE L'APPLICATION ---
+    let audioCtx = null;
+    let timerId = null;
+    let isPlaying = false;
+
+    let sessionChords = []; // Liste des accords retenus pour la session
+    let currentIndex = 0;   // Index de l'accord ACTUEL
+    let totalChordsPlayed = 0; // Compteur pour le mode "Nombre précis"
+
+    let currentBeat = 0;
+    let beatsPerMeasure = 4;
+    let isCountIn = true; // Mesures à vide au début
+    let countInMeasuresLeft = 2;
+
+    // --- ÉLÉMENTS DOM ---
+    const btnStart = document.getElementById('btn-start');
+    const btnStop = document.getElementById('btn-stop');
+    const paramLoopMode = document.getElementById('param-loop-mode');
+    const divPreciseCount = document.getElementById('div-precise-count');
+
+    // Affichage/Masquage dynamique du champ quantité
+    paramLoopMode.addEventListener('change', () => {
+        if(paramLoopMode.value === 'count') divPreciseCount.classList.remove('d-none');
+        else divPreciseCount.classList.add('d-none');
+    });
+
+    // --- AUDIO (Métronome via API Web Audio sans fichier externe) ---
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function playTick(isFirstBeat) {
+        initAudio();
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        // Premier temps aigu (Tic), autres temps plus graves (Toc)
+        osc.frequency.setValueAtTime(isFirstBeat ? 1000 : 600, audioCtx.currentTime);
+        
+        gain.gain.setValueAtTime(1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    // --- LOGIQUE GÉNÉRALE ---
+    function buildSessionChords() {
+        const instrument = document.getElementById('param-instrument').value;
+        const customListInput = document.getElementById('param-custom-list').value.trim();
+        let pool = [];
+
+        // 1. Filtrage par catégories si pas de liste personnalisée
+        if (!customListInput) {
+            const checkedCats = Array.from(document.querySelectorAll('.cat-check:checked')).map(cb => cb.value);
+            checkedCats.forEach(cat => {
+                if(chordLibrary[instrument] && chordLibrary[instrument][cat]) {
+                    pool = pool.concat(chordLibrary[instrument][cat]);
+                }
+            });
+        } else {
+            // Création depuis la liste personnalisée
+            const names = customListInput.split(',').map(n => n.trim().toUpperCase());
+            // On cherche dans toutes les catégories de l'instrument choisi
+            const allInstrumentChords = [];
+            Object.values(chordLibrary[instrument]).forEach(catArr => allInstrumentChords.push(...catArr));
+
+            names.forEach(name => {
+                let found = allInstrumentChords.find(c => c.name.toUpperCase() === name);
+                if (found) {
+                    pool.push(found);
+                } else {
+                    // Si l'accord personnalisé n'est pas dans notre petite BDD d'exemple, on crée un motif générique vide
+                    pool.push({ name: name, frets: "0000" });
+                }
+            });
+        }
+
+        if (pool.length === 0) {
+            alert("Aucun accord trouvé. Vérifiez vos catégories ou votre liste.");
+            return false;
+        }
+
+        // 2. Mode aléatoire (Mélange de Fisher-Yates)
+        if (document.getElementById('param-random').checked) {
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+        }
+
+        sessionChords = pool;
+        return true;
+    }
+
+    function drawVisualMetronome() {
+        const container = document.getElementById('metronome-visual');
+        container.innerHTML = '';
+        for (let i = 0; i < beatsPerMeasure; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'metronome-dot';
+            if (i === currentBeat && isPlaying) {
+                dot.className += (i === 0) ? ' active accent' : ' active';
+            }
+            container.appendChild(dot);
+        }
+    }
+
+    function updateChordDisplay() {
+        const currentChord = sessionChords[currentIndex];
+        // L'accord suivant est le suivant dans le tableau, ou revient au début si boucle
+        let nextIndex = currentIndex + 1;
+        if (nextIndex >= sessionChords.length) {
+            nextIndex = 0;
+        }
+        const nextChord = sessionChords[nextIndex];
+
+        // Affichage textuel
+        document.getElementById('current-chord-name').innerText = currentChord.name;
+        document.getElementById('next-chord-name').innerText = nextChord.name;
+
+        // Gestion dynamique de la position (prend la valeur du JSON ou 0 par défaut)
+        const currentPosition = currentChord.position !== undefined ? currentChord.position : "0";
+        const nextPosition = nextChord.position !== undefined ? nextChord.position : "0";
+
+        // Gestion dynamique des barrés (prend la valeur du JSON ou "" par défaut)
+        const currentBarre = currentChord.barre !== undefined ? currentChord.barre : "";
+        const nextBarre = nextChord.barre !== undefined ? nextChord.barre : "";
+
+        // Génération des balises uke-chord avec l'attribut position
+        document.getElementById('current-chord-container').innerHTML = 
+            `<uke-chord frets="${currentChord.frets}" position="${currentPosition}" barre="${currentBarre}" length="5"></uke-chord>`;
+        
+        document.getElementById('next-chord-container').innerHTML = 
+            `<uke-chord frets="${nextChord.frets}" position="${nextPosition}"  barre="${nextBarre}" length="5"></uke-chord>`;
+    }
+
+    function stopTraining() {
+        isPlaying = false;
+        clearInterval(timerId);
+        btnStart.classList.remove('d-none');
+        btnStop.classList.add('d-none');
+        document.getElementById('info-status').innerText = "Arrêté";
+    }
+
+    function startTraining() {
+        if (!buildSessionChords()) return;
+
+        initAudio();
+        isPlaying = true;
+        currentIndex = 0;
+        totalChordsPlayed = 1;
+        currentBeat = 0;
+        isCountIn = true;
+        countInMeasuresLeft = 2; // 2 mesures à vide
+        beatsPerMeasure = parseInt(document.getElementById('param-time-sig').value);
+        
+        const bpm = parseInt(document.getElementById('param-bpm').value);
+        const intervalMs = (60 / bpm) * 1000;
+
+        btnStart.classList.add('d-none');
+        btnStop.classList.remove('d-none');
+        
+        document.getElementById('info-status').innerText = `Mesures à vide... (${countInMeasuresLeft})`;
+        document.getElementById('info-loop').innerText = `Changements : 1`;
+
+        // Premier affichage initial
+        updateChordDisplay();
+        drawVisualMetronome();
+
+        // Lancement de la boucle temporelle (Métronome & logique)
+        // Lancement de la boucle temporelle (Métronome & logique)
+        timerId = setInterval(() => {
+            // 1. Jouer le son du métronome
+            playTick(currentBeat === 0);
+            drawVisualMetronome();
+
+            // 2. Gestion du temps / Changement d'accord
+            // --> LE "currentBeat++" QUI ÉTAIT ICI A ÉTÉ DÉPLACÉ PLUS BAS
+
+            if (currentBeat === 0) { // On vérifie si on est SUR le premier temps
+                if (isCountIn) {
+                    countInMeasuresLeft--;
+                    if (countInMeasuresLeft <= 0) {
+                        isCountIn = false;
+                        document.getElementById('info-status').innerText = "C'est parti ! Jouez !";
+                    } else {
+                        document.getElementById('info-status').innerText = `Mesures à vide... (${countInMeasuresLeft})`;
+                    }
+                } else {
+                    // C'est le moment de changer d'accord !
+                    const loopMode = paramLoopMode.value;
+                    const maxPreciseCount = parseInt(document.getElementById('param-precise-count').value);
+
+                    if (loopMode === 'count' && totalChordsPlayed >= maxPreciseCount) {
+                        stopTraining();
+                        alert("Exercice terminé avec succès !");
+                        return;
+                    }
+
+                    currentIndex++;
+                    if (currentIndex >= sessionChords.length) {
+                        if (loopMode === 'once') {
+                            stopTraining();
+                            alert("Fin de la liste d'accords !");
+                            return;
+                        } else {
+                            currentIndex = 0;
+                        }
+                    }
+
+                    totalChordsPlayed++;
+                    document.getElementById('info-loop').innerText = `Changements : ${totalChordsPlayed}`;
+                    updateChordDisplay();
+                }
+            }
+
+            // --> ON INCRÉMENTE LE TEMPS ICI POUR LE PROCHAIN COUP
+            currentBeat++;
+            if (currentBeat >= beatsPerMeasure) {
+                currentBeat = 0; 
+            }
+
+        }, intervalMs);
+    }
+
+    // --- ÉCOUTEURS D'ÉVÉNEMENTS ---
+    btnStart.addEventListener('click', startTraining);
+    btnStop.addEventListener('click', stopTraining);
+    // Initialisation graphique au chargement
+    beatsPerMeasure = parseInt(document.getElementById('param-time-sig').value);
+    drawVisualMetronome();
+    document.getElementById('param-time-sig').addEventListener('change', (e) => {
+        beatsPerMeasure = parseInt(e.target.value);
+        drawVisualMetronome();
+    });
+</script>
+
+<script>
+// --- LOGIQUE DU MODE NUIT ---
+const btnDarkMode = document.getElementById('btn-dark-mode');
+const darkModeIcon = document.getElementById('dark-mode-icon');
+
+// Vérifier si l'utilisateur avait déjà activé le mode nuit lors d'une session précédente
+if (localStorage.getItem('theme') === 'dark') {
+    enableDarkMode();
+}
+
+btnDarkMode.addEventListener('click', () => {
+    if (document.body.classList.contains('dark-mode')) {
+        disableDarkMode();
+    } else {
+        enableDarkMode();
+    }
+});
+
+function enableDarkMode() {
+    document.body.classList.add('dark-mode');
+    darkModeIcon.className = "bi bi-sun-fill text-warning"; // Devient un soleil jaune
+    btnDarkMode.className = "btn btn-outline-warning rounded-circle shadow-sm";
+    localStorage.setItem('theme', 'dark');
+}
+
+function disableDarkMode() {
+    document.body.classList.remove('dark-mode');
+    darkModeIcon.className = "bi bi-moon-fill"; // Redevient une lune
+    btnDarkMode.className = "btn btn-outline-secondary rounded-circle shadow-sm";
+    localStorage.setItem('theme', 'light');
+}
+</script>
+</body>
+</html>
