@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Grille ABCJS</title>
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="./css/abcjs-audio.css">
+    <style>
+        .abc-paper {
+            background: transparent;
+            padding: 10px;
+        }
+        /* Intégration du player abcjs */
+        .abcjs-audio .abcjs-btn {
+            background-color: var(--bs-primary) !important;
+            color: white !important;
+            border-radius: 4px;
+        }
+        .abcjs-audio {
+            border-radius: var(--bs-border-radius);
+            background: var(--bs-secondary-bg);
+            border: 1px solid var(--bs-border-color);
+        }
+        
+        /* --- Styles du Curseur SVG et de la surbrillance --- */
+        .abcjs-cursor {
+            stroke: rgba(220, 53, 69, 0.75);
+            stroke-width: 2.5px;
+        }
+        .abcjs-highlight {
+            fill: rgba(220, 53, 69, 0.2) !important;
+        }
+    </style>
+</head>
+<body class="bg-body-tertiary min-vh-100 d-flex flex-column">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="bi bi-music-note-list me-2 text-primary"></i> Grille-To-ABC Editor
+            </a>
+            <button class="btn btn-outline-light btn-sm ms-auto d-flex align-items-center" id="themeToggleBtn" onclick="toggleTheme()">
+                <i class="bi bi-sun-fill" id="themeIcon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container my-2 flex-grow-1">
+        <div class="row g-4">
+            
+            <div class="col-lg-5">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="card-title mb-0"><i class="bi bi-sliders me-2"></i>Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="chordGrid" class="form-label fw-bold">Votre grille d'accords :</label>
+                            <textarea class="form-control font-monospace" id="chordGrid" rows="3" placeholder="Ex: C /// G // C7 // Am"></textarea>
+                            <div class="form-text">Séparez par des espaces. Utilisez <code>/</code> pour répéter la mesure.</div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                <label for="gchordStyle" class="form-label fw-bold">Style :</label>
+                                <select class="form-select" id="gchordStyle">
+                                    <option value="zczczczc">Boom Chick (Standard)</option>
+                                    <option value="bzzcbzcz">Tango</option>
+                                    <option value="GIGIGJHJ">Arpège</option>
+                                    <option value="zzzz">Silencieux</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="timeSignature" class="form-label fw-bold">Mesure :</label>
+                                <select class="form-select" id="timeSignature">
+                                    <option value="4/4" selected>4/4</option>
+                                    <option value="3/4">3/4</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 pt-2">
+                            <button class="btn btn-success btn-lg" onclick="generateABC()">
+                                <i class="bi bi-play-circle-fill me-2"></i>Appliquer & Générer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-secondary text-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="bi bi-eye me-2"></i>Rendu</h5>
+                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#abcCodeCollapse">
+                            Code ABC
+                        </button>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        
+                        <div class="collapse mb-3" id="abcCodeCollapse">
+                            <textarea class="form-control font-monospace bg-body-secondary small" id="abcSource" rows="4" readonly></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex align-items-stretch gap-1">
+                                <div id="audio-player" class="flex-grow-1"></div>
+                                <button class="btn btn-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#moreControls" title="Plus d'options">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="collapse border border-top-0 rounded-bottom p-3 bg-body-secondary" id="moreControls">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-auto">
+                                        <label for="abc-sel-transpose" class="form-label small fw-bold">Transposer (demi-tons) :</label>
+                                        <select id="abc-sel-transpose" class="form-select form-select-sm" style="width: 120px;">
+                                            <option value="0" selected>0 (Défaut)</option>
+                                            <option value="1">+1</option>
+                                            <option value="2">+2</option>
+                                            <option value="3">+3</option>
+                                            <option value="4">+4</option>
+                                            <option value="5">+5</option>
+                                            <option value="6">+6</option>
+                                            <option value="7">+7</option>
+                                            <option value="8">+8</option>
+                                            <option value="-1">-1</option>
+                                            <option value="-2">-2</option>
+                                            <option value="-3">-3</option>
+                                            <option value="-4">-4</option>
+                                            <option value="-5">-5</option>
+                                            <option value="-6">-6</option>
+                                            <option value="-7">-7</option>
+                                            <option value="-8">-8</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button class="btn btn-primary btn-sm" onclick="generateABC()">Appliquer</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow-1 border rounded p-2 bg-card d-flex align-items-center justify-content-center">
+                            <div id="paper" class="w-100 abc-paper"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="./js/bootstrap.min.js"></script>
+    <script src="./js/abcjs-basicfx.js"></script>
+
+    <script>
+        document.getElementById('chordGrid').value = "C /// G // C7 // Am";
+
+        let synthControl = null;
+
+        // --- GESTIONNAIRE DU CURSEUR AUDIO (Intégration de votre modèle fonctionnel) ---
+        function CursorControl() {
+            var self = this;
+            self.onStart = function() {
+                var svg = document.querySelector("#paper svg");
+                if (!svg) return;
+                var cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                cursor.setAttribute("class", "abcjs-cursor");
+                cursor.setAttributeNS(null, 'x1', "0");
+                cursor.setAttributeNS(null, 'y1', "0");
+                cursor.setAttributeNS(null, 'x2', "0");
+                cursor.setAttributeNS(null, 'y2', "0");
+                svg.appendChild(cursor);
+            };
+            self.onEvent = function(ev) {
+                if (ev.measureStart && ev.left === null) return;
+                
+                // Nettoyage de l'ancienne surbrillance
+                document.querySelectorAll("#paper svg .abcjs-highlight").forEach(el => el.classList.remove("abcjs-highlight"));
+                
+                // Application de la nouvelle surbrillance
+                if (ev.elements) {
+                    for (var i = 0; i < ev.elements.length; i++) {
+                        var note = ev.elements[i];
+                        for (var j = 0; j < note.length; j++) {
+                            note[j].classList.add("abcjs-highlight");
+                        }
+                    }
+                }
+                
+                // Déplacement de la ligne rouge du curseur
+                var cursor = document.querySelector("#paper svg .abcjs-cursor");
+                if (cursor && ev.left !== null) {
+                    cursor.setAttributeNS(null, 'x1', (ev.left - 2).toString());
+                    cursor.setAttributeNS(null, 'x2', (ev.left - 2).toString());
+                    cursor.setAttributeNS(null, 'y1', ev.top.toString());
+                    cursor.setAttributeNS(null, 'y2', (ev.top + ev.height).toString());
+                }
+            };
+            self.onFinished = function() {
+                document.querySelectorAll("#paper svg .abcjs-highlight").forEach(el => el.classList.remove("abcjs-highlight"));
+                var cursor = document.querySelector("#paper svg .abcjs-cursor");
+                if (cursor) { 
+                    cursor.setAttributeNS(null, 'x1', "0"); 
+                    cursor.setAttributeNS(null, 'x2', "0"); 
+                }
+            };
+        }
+        const cursorControl = new CursorControl();
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', newTheme);
+            
+            const btn = document.getElementById('themeToggleBtn');
+            if (newTheme === 'dark') {
+                btn.innerHTML = '<i class="bi bi-sun-fill"></i>';
+            } else {
+                btn.innerHTML = '<i class="bi bi-moon-fill"></i>';
+            }
+        }
+
+        function generateABC() {
+            if (synthControl) {
+                synthControl.pause();
+                synthControl = null;
+            }
+
+            const gridText = document.getElementById('chordGrid').value.trim();
+            const gchord = document.getElementById('gchordStyle').value;
+            const timeSig = document.getElementById('timeSignature').value;
+            const transposeValue = parseInt(document.getElementById('abc-sel-transpose').value, 10) || 0;
+            
+            const tokens = gridText.replace(/\|/g, ' ').split(/\s+/).filter(t => t.length > 0);
+            
+            let abcMeasures = [];
+            let lastChord = "C"; 
+            const beatsPerMeasure = timeSig === "3/4" ? 3 : 4;
+            const rests = " z".repeat(beatsPerMeasure).trim();
+
+            tokens.forEach(token => {
+                if (token === "/" || token === "///" || token === "//") {
+                    const count = token.length;
+                    for(let i=0; i<count; i++) {
+                        abcMeasures.push(`"${lastChord}" ${rests}`);
+                    }
+                } else {
+                    lastChord = token;
+                    abcMeasures.push(`"${lastChord}" ${rests}`);
+                }
+            });
+
+            let formattedMeasures = "";
+            for (let i = 0; i < abcMeasures.length; i++) {
+                formattedMeasures += abcMeasures[i] + " | ";
+                if ((i + 1) % 4 === 0 && i !== abcMeasures.length - 1) {
+                    formattedMeasures += "\n ";
+                }
+            }
+
+            // Utilisation combinée de %%MIDI transpose pour l'audio gchord
+            const abcString = `X:1\nT:Grille Rythmique\nM:${timeSig}\nL:1/4\nQ:100\nK:C\n%%MIDI transpose ${transposeValue}\n%%MIDI gchord ${gchord}\n${formattedMeasures}`;
+            document.getElementById('abcSource').value = abcString;
+
+            const renderOptions = { 
+                responsive: "resize",
+                add_classes: true,
+                visualTranspose: transposeValue
+            };
+
+            // 1. Rendu Visuel
+            const visualObj = ABCJS.renderAbc("paper", abcString, renderOptions)[0];
+
+            // 2. Rendu Audio (Liaison robuste via le paramètre cursorControl officiel d'abcjs)
+            if (ABCJS.synth.supportsAudio()) {
+                const audioOptions = {
+                    displayLoop: true,
+                    displayRestart: true,
+                    displayPlay: true,
+                    displayProgress: true,
+                    displayWarp: true,
+                    midiTranspose: transposeValue
+                };
+                
+                synthControl = new ABCJS.synth.SynthController();
+                // Ici, on injecte 'cursorControl' directement en deuxième argument
+                synthControl.load("#audio-player", cursorControl, audioOptions);
+
+                const createSynth = new ABCJS.synth.CreateSynth();
+                createSynth.init({ visualObj: visualObj }).then(function () {
+                    synthControl.setTune(visualObj, false).then(function () {
+                        console.log("Lecteur audio et curseur synchronisés.");
+                    }).catch(function (error) {
+                        console.warn("Erreur d'initialisation du morceau :", error);
+                    });
+                }).catch(function (error) {
+                    console.warn("Erreur de création de la synthèse audio :", error);
+                });
+            } else {
+                document.getElementById("audio-player").innerHTML = "<div class='alert alert-warning p-2 small'>L'audio n'est pas supporté.</div>";
+            }
+        }
+
+        window.onload = function() {
+            generateABC();
+        };
+    </script>
+</body>
+</html>
