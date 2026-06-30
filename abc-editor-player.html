@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecteur ABCJS & Partition Locale</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/abcjs@6.6.3/abcjs-audio.min.css">
+    
+    <style>
+        body { 
+            background-color: #f4f6f8; 
+            overflow-x: hidden;
+        }
+        
+        .offcanvas {
+            max-width: 320px;
+        }
+
+        .paper { 
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
+            padding: 24px; 
+        }
+
+        #notation svg { 
+            width: 100%; 
+            height: auto; 
+        }
+
+        /* Player fixé en bas (Sticky Player) */
+        .sticky-player-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            z-index: 1030;
+            border-top: 1px solid #e9ecef;
+        }
+
+        /* Menu des options avancées sous le player principal, partageant le même style */
+        .advanced-menu-box {
+            background: rgba(255, 255, 255, 0.96);
+            border-top: 1px solid #e9ecef;
+            padding: 12px 0 16px 0;
+        }
+
+        /* Espace pour éviter que le contenu soit masqué par le player fixe */
+        .main-content {
+            padding-bottom: 180px; /* Augmenté légèrement pour anticiper l'ouverture du menu */
+        }
+
+        .workspace-container {
+            display: block;
+        }
+        
+        .music-zone, .code-zone {
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Classes de surbrillance natives d'abcjs */
+        .abcjs-highlight, .abcjs-note_selected { 
+            fill: #0d6efd !important; 
+        }
+        .abcjs-highlight g, .abcjs-note_selected g { 
+            fill: #0d6efd !important; 
+        }
+        
+        /* Barre verticale de lecture (audio) */
+        .abcjs-cursor { 
+            stroke: #dc3545; 
+            stroke-width: 3px; 
+        }
+		
+		.paper {
+			overflow-x: auto;
+		}
+
+        @media (min-width: 1200px) {
+            .workspace-container {
+                display: table;
+                table-layout: fixed;
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 24px 0;
+                margin-left: -24px;
+                margin-right: -24px;
+            }
+            .music-zone, .code-zone {
+                display: table-cell;
+                vertical-align: top;
+                margin-bottom: 0;
+            }
+            .music-zone {
+                width: 60%;
+            }
+            .code-zone {
+                width: 40%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+    <div class="container-fluid px-4">
+        <button class="navbar-toggler d-block me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarLibrary" aria-controls="sidebarLibrary">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <a class="navbar-brand fw-bold" href="#">Éditeur & Lecteur ABCJS</a>
+			<div>
+                <button id="btn-export" class="btn btn-success me-2">📥 Sauvegarder la bibliothèque (Télécharger)</button>
+                <button id="btn-import-trigger" class="btn btn-warning">📤 Ouvrir une bibliothèque (Charger)</button>
+                <input type="file" id="file-import" accept=".json" class="d-none">
+            </div>
+        <span id="save-status" class="badge bg-success ms-auto d-none">Enregistré</span>
+    </div>
+</nav>
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarLibrary" aria-labelledby="sidebarLibraryLabel">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title fw-bold" id="sidebarLibraryLabel">Bibliothèque</h5>
+        <button type="button" class="btn-close" data-bs-canvas="offcanvas" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column justify-content-between">
+        <div class="mb-3">
+            <label for="score-selector" class="form-label text-muted small uppercase fw-bold">Morceaux enregistrés</label>
+            <select id="score-selector" class="form-select" size="15" style="height: auto; max-height: 65vh;">
+                </select>
+        </div>
+        <button id="btn-new" class="btn btn-primary w-100 py-2">
+            + Nouveau morceau
+        </button>
+    </div>
+</div>
+
+<div class="container-fluid px-4 py-4 main-content">
+    <div class="workspace-container">
+        
+        <div class="music-zone">
+            <div class="paper">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="text-secondary fs-6 m-0 text-uppercase fw-bold tracking-wider">Partition</h4>
+                    <button id="btn-rename" class="btn btn-outline-secondary btn-sm">✏️ Renommer le morceau</button>
+                </div>
+                <div id="notation"></div>
+            </div>
+        </div>
+
+        <div class="code-zone">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <label for="abc-code" class="form-label fw-bold mb-3 text-secondary text-uppercase fs-6">Code Source ABC</label>
+                    <textarea id="abc-code" class="form-control font-monospace" rows="18" style="font-size: 0.9rem; resize: vertical;"></textarea>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="sticky-player-container">
+    <div class="container-fluid px-4 py-2">
+        <div class="d-flex align-items-center justify-content-between">
+            <div id="audio-controls" class="flex-grow-1 me-3"></div>
+            
+            <div>
+                <button class="btn btn-outline-secondary border-0 rounded-circle px-2 py-1" 
+                        type="button" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#advanced-player-menu" 
+                        aria-expanded="false" 
+                        aria-controls="advanced-player-menu" 
+                        title="Options avancées"
+                        style="font-size: 1.3rem; line-height: 1;">
+                    ⋮
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="collapse" id="advanced-player-menu">
+		<div class="advanced-menu-box">
+			<div class="container-fluid px-4">
+				
+				<div class="row g-3 align-items-center mb-3">
+					
+					<div class="col-6 col-sm-3 col-md-2">
+						<label for="opt-transpose" class="form-label small fw-bold text-muted mb-1">Transposer (½ tons)</label>
+						<input type="number" id="opt-transpose" class="form-control form-control-sm text-center" value="0" min="-12" max="12">
+					</div>
+					
+					<div class="col-6 col-sm-4 col-md-3">
+						<div class="d-flex justify-content-between">
+							<label for="opt-swing" class="form-label small fw-bold text-muted mb-1">Swing</label>
+							<span id="swing-val" class="small text-secondary fw-bold">50</span>
+						</div>
+						<input type="range" id="opt-swing" class="form-range" min="50" max="70" value="50" oninput="document.getElementById('swing-val').innerText = this.value">
+					</div>
+					
+					<div class="col-12 col-sm-5 col-md-4 pt-sm-3">
+						<div class="d-flex gap-3 flex-wrap">
+							<div class="form-check form-switch">
+								<input class="form-check-input" type="checkbox" role="switch" id="opt-mute-melody">
+								<label class="form-check-input-label small fw-bold text-muted ms-1" for="opt-mute-melody">Taire la mélodie</label>
+							</div>
+							<div class="form-check form-switch">
+								<input class="form-check-input" type="checkbox" role="switch" id="opt-mute-chords">
+								<label class="form-check-input-label small fw-bold text-muted ms-1" for="opt-mute-chords">Taire les accords</label>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-12 col-md-3 pt-md-3 text-md-end">
+						<div class="form-check form-switch d-inline-block">
+							<input class="form-check-input" type="checkbox" role="switch" id="opt-auto-scroll" checked>
+							<label class="form-check-input-label small fw-bold text-muted ms-1" for="opt-auto-scroll">Défiler avec la musique</label>
+						</div>
+					</div>
+
+				</div>
+
+				<div class="col-12 col-md-5 pt-md-1 border-start ps-md-4">
+					<div class="d-flex align-items-center gap-2 mb-2">
+						<div class="form-check form-switch m-0">
+							<input class="form-check-input" type="checkbox" role="switch" id="opt-drum-enabled">
+							<label class="form-check-input-label small fw-bold text-muted ms-1" for="opt-drum-enabled">Activer Rythme/Métronome</label>
+						</div>
+					</div>
+					<div class="row g-2">
+						<div class="col-4">
+							<label for="opt-drum-pattern" class="form-label micro-label small text-muted mb-0" style="font-size:0.75rem;">Pattern</label>
+							<select id="opt-drum-pattern" class="form-select form-select-sm">
+								<option value="4/4" selected>4/4</option>
+								<option value="2/4">2/4</option>
+								<option value="3/4">3/4</option>
+								<option value="5/4">5/4</option>
+								<option value="6/8">6/8</option>
+								<option value="9/8">9/8</option>
+								<option value="12/8">12/8</option>
+							</select>
+						</div>
+						<div class="col-4">
+							<label for="opt-drum-intro" class="form-label micro-label small text-muted mb-0" style="font-size:0.75rem;">Mesures Intro</label>
+							<input type="number" id="opt-drum-intro" class="form-control form-control-sm text-center" value="2" min="0" max="8">
+						</div>
+						<div class="col-4">
+							<label for="opt-drum-bars" class="form-label micro-label small text-muted mb-0" style="font-size:0.75rem;">Total Mesures</label>
+							<input type="number" id="opt-drum-bars" class="form-control form-control-sm text-center" value="2" min="1" max="99">
+						</div>
+					</div>
+				</div>
+
+
+				<div class="row g-3 align-items-end border-top pt-3">
+					
+					<div class="col-6 col-sm-4 col-md-3">
+						<label for="opt-tab-instrument" class="form-label small fw-bold text-muted mb-1">Tablature instrument</label>
+						<select id="opt-tab-instrument" class="form-select form-select-sm" onchange="document.getElementById('opt-tab-tuning').disabled = (this.value === 'none')">
+							<option value="none" selected>Aucune</option>
+							<option value="guitar">Guitare</option>
+							<option value="violin">Violon / Mandoline</option>
+							<option value="viola">Alto (Viola)</option>
+						</select>
+					</div>
+
+					<div class="col-6 col-sm-4 col-md-3">
+						<label for="opt-tab-tuning" class="form-label small fw-bold text-muted mb-1">Accordage (Ex: E,A,D,G,B,e)</label>
+						<input type="text" id="opt-tab-tuning" class="form-control form-control-sm" placeholder="Par défaut" disabled>
+					</div>
+
+					<div class="col-12 col-sm-4 col-md-6 d-flex justify-content-between align-items-center pt-2 pt-sm-0">
+						<button id="btn-apply-settings" class="btn btn-sm btn-primary px-3 fw-bold">
+							🔄 Appliquer les changements
+						</button>
+
+<a id="btn-export-midi" class="btn btn-outline-secondary" download="morceau.mid" href="#">💾Exporter MIDI</a>
+
+						
+					</div>
+
+				</div>
+
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.0/dist/abcjs-basic-min.js"></script>
+
+<script>
+    // --- MOTEUR DE STOCKAGE LOCALSTORAGE (SÉCURISÉ POUR FILE:///) ---
+    function getScoresFromStorage() {
+        const scoresRaw = localStorage.getItem("AbcJs_Scores_Database");
+        if (!scoresRaw) return [];
+        try {
+            return JSON.parse(scoresRaw);
+        } catch(e) {
+            return [];
+        }
+    }
+
+    function saveScoresToStorage(scores) {
+        localStorage.setItem("AbcJs_Scores_Database", JSON.stringify(scores));
+    }
+
+    function saveScoreToDB(title, abc, callback) {
+        const scores = getScoresFromStorage();
+        const newId = scores.length > 0 ? Math.max(...scores.map(s => s.id)) + 1 : 1;
+        const newScore = { id: newId, title: title, abc: abc };
+        scores.push(newScore);
+        saveScoresToStorage(scores);
+        callback(newId);
+    }
+
+    function updateScoreInDB(id, title, abc, callback) {
+        const scores = getScoresFromStorage();
+        const index = scores.findIndex(s => s.id === id);
+        if (index !== -1) {
+            scores[index].title = title;
+            scores[index].abc = abc;
+            saveScoresToStorage(scores);
+        }
+        callback();
+    }
+
+    function getScoreFromDB(id, callback) {
+        const scores = getScoresFromStorage();
+        const score = scores.find(s => s.id === id);
+        callback(score);
+    }
+
+    function loadScoresFromDB(callback) {
+        const scores = getScoresFromStorage();
+        callback(scores);
+    }
+
+    // --- LOGIQUE DES BOUTONS IMPORT / EXPORT (JSON) ---
+    document.getElementById('btn-export').addEventListener('click', function() {
+        const scores = getScoresFromStorage();
+        if (scores.length === 0) {
+            alert("La bibliothèque est vide.");
+            return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(scores, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "ma_bibliotheque_abc.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    });
+
+    document.getElementById('btn-import-trigger').addEventListener('click', function() {
+        document.getElementById('file-import').click();
+    });
+
+    document.getElementById('file-import').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const importedScores = JSON.parse(event.target.result);
+                if (Array.isArray(importedScores) && importedScores.length > 0 && importedScores[0].abc) {
+                    if (confirm("Voulez-vous écraser votre bibliothèque actuelle par celle-ci ?")) {
+                        saveScoresToStorage(importedScores);
+                        currentId = importedScores[0].id;
+                        localStorage.setItem("AbcJs_LastCurrentId", currentId);
+                        refreshListAndSelect(currentId);
+                        alert("Bibliothèque chargée avec succès !");
+                    }
+                } else {
+                    alert("Format de fichier invalide. Ce n'est pas une bibliothèque ABC valide.");
+                }
+            } catch(err) {
+                alert("Erreur lors de la lecture du fichier JSON.");
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = ""; 
+    });
+	// FIN DU SCRIPT DATA
+</script>
+
+<script>
+    const DEFAULT_ABC = `X:1\nT:syntax accords étendus\nL:1/4\nM:4/4\nQ:100\nK:C\n%%MIDI gchord czczczcz\nT:No sound differences\n| "C" z4 | "C7b5" z4 |\nT: Unexpected differences\n| "Cdim" z4 | "C°" z4 |\n% Test differences\n| "C" z4 | "C7b5" z4 | "C" z4 | "C+" z4 |\n| "C7" z4 | "C°" z4 | "Cdim" z4 | "C7b5" z4 |\n| "C7" z4 | "C+" z4 | "Caug" z4 | "C7b5" z4 |\n| "C7" z4 | "Cm" z4 | "Cm7" z4 | "C9" z4 | "C7b5" z4 |\n| "C" z4 | "C/G" z4`;
+
+    let currentId = null;
+    let abcEditor = null;
+    let synthControl = null;
+    let currentVisualObj = null; 
+    
+    let currentTranspose = 0;
+    let muteMelody = false;
+    let muteChords = false;
+
+    // Configuration des signatures rythmiques MIDI injectées
+    const drumMidiPatterns = {
+        "2/4": { pattern: "d2 76 77", defaultLen: "4" },
+        "3/4": { pattern: "d2dd 76 77 77", defaultLen: "4" },
+        "4/4": { pattern: "d2d2dddd 76 76 76 76 76 76 68 68 68 48 68 48", defaultLen: "4" },
+        "5/4": { pattern: "d2dddd 76 77 77 77 77", defaultLen: "4" },
+        "6/8": { pattern: "d2dddd 76 77 77 77 77 77", defaultLen: "8" },
+        "9/8": { pattern: "d2dddddddd 76 77 77 77 77 77 77 77 77", defaultLen: "8" },
+        "12/8": { pattern: "d2ddddddddddd 76 77 77 77 77 77 77 77 77 77 77 77", defaultLen: "8" }
+    };
+
+    // --- GESTIONNAIRE DU CURSEUR AUDIO (BARRE ROUGE DE SUIVI) ---
+    function CursorControl() {
+        var self = this;
+        self.onStart = function() {
+            var svg = document.querySelector("#notation svg");
+            if (!svg) return;
+            var cursor = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            cursor.setAttribute("class", "abcjs-cursor");
+            cursor.setAttributeNS(null, 'x1', "0");
+            cursor.setAttributeNS(null, 'y1', "0");
+            cursor.setAttributeNS(null, 'x2', "0");
+            cursor.setAttributeNS(null, 'y2', "0");
+            svg.appendChild(cursor);
+        };
+        self.onEvent = function(ev) {
+            if (ev.measureStart && ev.left === null) return;
+            document.querySelectorAll("#notation svg .abcjs-highlight").forEach(el => el.classList.remove("abcjs-highlight"));
+            for (var i = 0; i < ev.elements.length; i++) {
+                var note = ev.elements[i];
+                for (var j = 0; j < note.length; j++) {
+                    note[j].classList.add("abcjs-highlight");
+                }
+            }
+            var cursor = document.querySelector("#notation svg .abcjs-cursor");
+            if (cursor) {
+                cursor.setAttributeNS(null, 'x1', (ev.left - 2).toString());
+                cursor.setAttributeNS(null, 'x2', (ev.left - 2).toString());
+                cursor.setAttributeNS(null, 'y1', ev.top.toString());
+                cursor.setAttributeNS(null, 'y2', (ev.top + ev.height).toString());
+            }
+        };
+        self.onFinished = function() {
+            document.querySelectorAll("#notation svg .abcjs-highlight").forEach(el => el.classList.remove("abcjs-highlight"));
+            var cursor = document.querySelector("#notation svg .abcjs-cursor");
+            if (cursor) { cursor.setAttributeNS(null, 'x1', "0"); cursor.setAttributeNS(null, 'x2', "0"); }
+        };
+    }
+    var cursorControl = new CursorControl();
+
+    // --- INITIALISATION DE L'APPLICATION ---
+    function initApp() {
+        const scores = getScoresFromStorage();
+        
+        if (scores.length === 0) {
+            saveScoreToDB("Syntax accords étendus", DEFAULT_ABC, function(id) {
+                currentId = id;
+                localStorage.setItem("AbcJs_LastCurrentId", id);
+                refreshListAndSelect(id);
+            });
+        } else {
+            const savedLastId = parseInt(localStorage.getItem("AbcJs_LastCurrentId"), 10);
+            const scoreExists = scores.find(s => s.id === savedLastId);
+            
+            currentId = scoreExists ? savedLastId : scores[0].id;
+            refreshListAndSelect(currentId);
+        }
+
+        document.getElementById('score-selector').addEventListener('change', function(e) {
+            currentId = parseInt(e.target.value);
+            localStorage.setItem("AbcJs_LastCurrentId", currentId);
+            
+            getScoreFromDB(currentId, function(score) {
+                currentTranspose = 0;
+                muteMelody = false;
+                muteChords = false;
+                document.getElementById('opt-transpose').value = 0;
+                document.getElementById('opt-mute-melody').checked = false;
+                document.getElementById('opt-mute-chords').checked = false;
+                document.getElementById('opt-drum-enabled').checked = false;
+                
+                loadEditorWithABC(score.abc);
+                
+                const sidebarEl = document.getElementById('sidebarLibrary');
+                const bsOffcanvas = bootstrap.Offcanvas.getInstance(sidebarEl);
+                if (bsOffcanvas && window.innerWidth < 1200) {
+                    bsOffcanvas.hide();
+                }
+            });
+        });
+
+        document.getElementById('btn-new').addEventListener('click', function() {
+            const name = prompt("Entrez le nom du nouveau morceau :", "Nouveau Morceau");
+            if (name === null) return;
+            const finalName = name.trim() || "Nouveau Morceau";
+            const emptyABC = `X:1\nT:${finalName}\nM:4/4\nL:1/4\nK:C\n| C D E F | G A B c |`;
+            
+            saveScoreToDB(finalName, emptyABC, function(id) {
+                currentId = id;
+                localStorage.setItem("AbcJs_LastCurrentId", id);
+                currentTranspose = 0;
+                muteMelody = false;
+                muteChords = false;
+                document.getElementById('opt-transpose').value = 0;
+                document.getElementById('opt-mute-melody').checked = false;
+                document.getElementById('opt-mute-chords').checked = false;
+                document.getElementById('opt-drum-enabled').checked = false;
+                
+                refreshListAndSelect(id);
+                showSaveStatus();
+                
+                const sidebarEl = document.getElementById('sidebarLibrary');
+                const bsOffcanvas = bootstrap.Offcanvas.getInstance(sidebarEl);
+                if (bsOffcanvas && window.innerWidth < 1200) {
+                    bsOffcanvas.hide();
+                }
+            });
+        });
+
+        document.getElementById('btn-rename').addEventListener('click', function() {
+            if (!currentId) return;
+            getScoreFromDB(currentId, function(score) {
+                const newName = prompt("Modifier le nom du morceau :", score.title);
+                if (newName === null) return;
+                const finalName = newName.trim() || "Sans titre";
+
+                let abc = document.getElementById('abc-code').value;
+                if (abc.match(/^T:\s*(.*)$/m)) {
+                    abc = abc.replace(/^T:\s*(.*)$/m, `T:${finalName}`);
+                } else {
+                    abc = abc.replace(/(X:\d+\n)/, `$1T:${finalName}\n`);
+                }
+
+                loadEditorWithABC(abc);
+                updateScoreInDB(currentId, finalName, abc, function() {
+                    refreshListAndSelect(currentId);
+                    showSaveStatus();
+                });
+            });
+        });
+
+        document.getElementById('btn-apply-settings').addEventListener('click', function() {
+            const transposeInput = parseInt(document.getElementById('opt-transpose').value, 10);
+            if (!isNaN(transposeInput)) { currentTranspose = transposeInput; }
+            
+            muteMelody = document.getElementById('opt-mute-melody').checked;
+            muteChords = document.getElementById('opt-mute-chords').checked;
+            
+            // On récupère le code nettoyé de ses anciennes directives métronome pour ré-injecter proprement
+            let currentABC = document.getElementById('abc-code').value;
+            currentABC = cleanMidiDirectives(currentABC);
+            
+            const finalABC = injectMidiDirectives(currentABC);
+            loadEditorWithABC(finalABC);
+        });
+    }
+
+    // --- NETTOYAGE DES DIRECTIVES MIDI COMPORTANT LE METRONOME ---
+    function cleanMidiDirectives(abc) {
+        // Enlève le bloc de directives injectées au tout début du code
+        return abc.replace(/%%MIDI drum .*\n%%MIDI drumbars.*\n%%MIDI drumon.*\n(z\d+ \|? ?)+\s*\[I:MIDI drumoff\]\s*\|\s*\n?/g, "");
+    }
+
+    // --- INJECTION DIRECTE DES DIRECTIVES MIDI DANS LA CHAINE ABC ---
+    function injectMidiDirectives(abc) {
+        const isDrumEnabled = document.getElementById('opt-drum-enabled').checked;
+        if (!isDrumEnabled) return abc;
+
+        const selectedPattern = document.getElementById('opt-drum-pattern').value;
+        const introBars = parseInt(document.getElementById('opt-drum-intro').value, 10) || 0;
+        const totalBars = parseInt(document.getElementById('opt-drum-bars').value, 10) || 2;
+
+        const config = drumMidiPatterns[selectedPattern] || drumMidiPatterns["4/4"];
+        
+        let midiString = `%%MIDI drum ${config.pattern}\n`;
+        midiString += `%%MIDI drumbars ${totalBars}\n`;
+        midiString += `%%MIDI drumon\n`;
+
+        // Construction de la mesure d'intro silencieuse
+        if (introBars > 0) {
+            let introMeasures = "";
+            for (let i = 0; i < introBars; i++) {
+                introMeasures += `z${config.defaultLen} `;
+                if (i < introBars - 1) introMeasures += "| ";
+            }
+            midiString += `${introMeasures} [I:MIDI drumoff] |`;
+        } else {
+            midiString += `z${config.defaultLen} [I:MIDI drumoff] |`;
+        }
+
+        // Insertion juste après les entêtes de base (K: étant idéalement le dernier élément d'entête)
+        if (abc.match(/^K:.*$/m)) {
+            return abc.replace(/(^K:.*$)/m, `$1\n${midiString}`);
+        } else {
+            return midiString + abc;
+        }
+    }
+
+    // --- CONSTRUIRE LES PARAMÈTRES AUDIO ---
+    function buildSynthOptions() {
+        return { 
+            displayLoop: true,
+            displayRestart: true, 
+            displayPlay: true, 
+            displayProgress: true, 
+            displayWarp: true,
+            chordsOff: muteChords,
+            voicesOff: muteMelody ? [0] : [],
+            midiTranspose: currentTranspose
+        };
+    }
+
+    // --- INSTANCIATION DE L'ÉDITEUR ---
+    function loadEditorWithABC(initialAbc) {
+        document.getElementById('abc-code').value = initialAbc;
+        document.getElementById('notation').innerHTML = '';
+        
+        const audioOptions = buildSynthOptions();
+
+        if (ABCJS.synth.supportsAudio()) {
+            synthControl = new ABCJS.synth.SynthController();
+            synthControl.load("#audio-controls", cursorControl, audioOptions);
+        }
+
+        abcEditor = new ABCJS.Editor("abc-code", {
+            paper_id: "notation",
+            generate_warnings: false,
+            warnings_id: null,
+            synth: {
+                el: "#audio-controls",
+                options: audioOptions,
+                cursorControl: cursorControl
+            },
+            abcjsParams: {
+                responsive: "resize",
+                add_classes: true,
+                visualTranspose: currentTranspose,
+                clickListener: function(abcElem) {
+                    if (abcElem.startChar && abcElem.endChar) {
+                        const textarea = document.getElementById('abc-code');
+                        textarea.focus();
+                        textarea.setSelectionRange(abcElem.startChar, abcElem.endChar);
+                    }
+                }
+            },
+            onchange: function(editorInstance) {
+                if (editorInstance && editorInstance.tunes && editorInstance.tunes.length > 0) {
+                    currentVisualObj = editorInstance.tunes[0];
+                    generateMidiLink();
+                }
+
+                const currentABC = document.getElementById('abc-code').value;
+                const currentTitle = parseTitle(currentABC) || "Morceau sans titre";
+                
+                if (currentId) {
+                    updateScoreInDB(currentId, currentTitle, currentABC, function() {
+                        showSaveStatus();
+                        updateListSilent(currentId, currentTitle);
+                    });
+                }
+            }
+        });
+
+        setTimeout(() => {
+            if (!currentVisualObj && abcEditor && abcEditor.tunes && abcEditor.tunes.length > 0) {
+                currentVisualObj = abcEditor.tunes[0];
+                generateMidiLink();
+            }
+        }, 300);
+    }
+
+    function parseTitle(abc) {
+        const match = abc.match(/^T:\s*(.*)$/m);
+        return match ? match[1].trim() : null;
+    }
+
+    // --- REFRESH INTERFACE ---
+    function refreshListAndSelect(selectId) {
+        loadScoresFromDB(function(scores) {
+            const selector = document.getElementById('score-selector');
+            selector.innerHTML = '';
+            scores.forEach(score => {
+                const option = document.createElement('option');
+                option.value = score.id;
+                option.textContent = score.title;
+                if (score.id === selectId) option.selected = true;
+                selector.appendChild(option);
+            });
+
+            if (selectId) {
+                getScoreFromDB(selectId, function(score) {
+                    loadEditorWithABC(score.abc);
+                });
+            }
+        });
+    }
+
+    function updateListSilent(id, title) {
+        const selector = document.getElementById('score-selector');
+        const option = selector.querySelector(`option[value="${id}"]`);
+        if (option) option.textContent = title;
+    }
+
+    function showSaveStatus() {
+        const status = document.getElementById('save-status');
+        status.classList.remove('d-none');
+        setTimeout(() => status.classList.add('d-none'), 1200);
+    }
+
+    // --- GENERATION ET MISE A AUTOUR AUTOMATIQUE DU LIEN MIDI ---
+    function generateMidiLink() {
+        const midiLinkEl = document.getElementById('btn-export-midi');
+        if (!midiLinkEl || !currentVisualObj) return;
+
+        const currentABC = document.getElementById('abc-code').value;
+        const currentTitle = parseTitle(currentABC) || "morceau";
+        const sanitizedTitle = currentTitle.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+        const audioOptions = buildSynthOptions();
+
+        try {
+            const midiHtmlString = ABCJS.synth.getMidiFile(currentVisualObj, audioOptions);
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = midiHtmlString;
+            const nativeAnchor = tempDiv.querySelector('a');
+
+            if (nativeAnchor && nativeAnchor.href) {
+                midiLinkEl.href = nativeAnchor.href;
+                midiLinkEl.setAttribute('download', `${sanitizedTitle}.mid`);
+            } else {
+                console.warn("Le moteur abcjs n'a pas pu créer l'ancre binaire.");
+                midiLinkEl.href = "#";
+            }
+        } catch (error) {
+            console.error("Erreur lors de la configuration du lien MIDI :", error);
+            midiLinkEl.href = "#";
+        }
+    }
+
+    // DÉMARRAGE IMMÉDIAT
+    initApp();
+</script>
+</body>
+</html>
