@@ -8,3 +8,6 @@
 
 # Ear chord trainer
 [chord-ear-trainer.html](chord-ear-trainer.html)
+
+# Abc editor player
+[abc-editor-player.html](abc-editor-player.html)
