@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ear Trainer - Accords Guitare & Ukulélé</title>
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+	<link rel="stylesheet" href="./css/bootstrap-icons.min.css">
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f1f3f5; }
+        .main-card { min-height: 200px; transition: all 0.3s ease; position: relative; }
+        uke-chord { display: block; width: 100px; margin: 0 auto; }
+        .hidden-chord { font-size: 5rem; color: #6c757d; }
+        .chord-guess-btn { transition: all 0.2s ease; font-weight: 600; padding: 10px 15px; }
+		
+/* --- COMPLÉMENTS MODE NUIT POUR EAR TRAINER --- */
+
+/* Gestion des boutons de réponse (Neutres au départ) */
+[data-bs-theme="dark"] .chord-guess-btn {
+    background-color: #252525 !important;
+    color: #e0e0e0 !important;
+    border-color: #404040 !important;
+}
+[data-bs-theme="dark"] .chord-guess-btn:hover {
+    background-color: #333333 !important;
+    border-color: #555555 !important;
+}
+
+/* Forcer la lisibilité du texte sous la partition */
+[data-bs-theme="dark"] #chord-notes-text {
+    color: #b0b0b0 !important;
+}
+
+/* Ajustement des alertes de Feedback pour ne pas exploser les yeux */
+[data-bs-theme="dark"] .alert-success {
+    background-color: #112a1a !important;
+    color: #72db93 !important;
+    border-color: #1e462b !important;
+}
+[data-bs-theme="dark"] .alert-danger {
+    background-color: #2d1216 !important;
+    color: #f77285 !important;
+    border-color: #4c1d24 !important;
+}
+
+/* Inversion magique pour la partition ABCJS (cible le conteneur de rendu) */
+[data-bs-theme="dark"] #notation-render {
+    background-color: transparent !important;
+}
+
+/* Sécurité pour masquer proprement le container de flux audio en mode nuit */
+[data-bs-theme="dark"] #audio-player-container {
+    display: none !important;
+}
+
+/* ==========================================
+   MODE NUITS UNIVERSEL (Indépendant de Bootstrap)
+   ========================================== */
+
+/* 1. Fond global et textes */
+[data-bs-theme="dark"] {
+    background-color: #121212 !important;
+    color: #f8f9fa !important;
+}
+
+/* 2. Cartes, blocs de paramètres et accordéons */
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .main-card,
+[data-bs-theme="dark"] .accordion-item,
+[data-bs-theme="dark"] .accordion-body,
+[data-bs-theme="dark"] .bg-white,
+[data-bs-theme="dark"] .bg-light {
+    background-color: #1e1e1e !important;
+    color: #f8f9fa !important;
+    border-color: #2d2d2d !important;
+}
+
+/* 3. Inputs, boutons de listes déroulantes */
+[data-bs-theme="dark"] .form-select,
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .accordion-button {
+    background-color: #2b2b2b !important;
+    color: #ffffff !important;
+    border-color: #3a3a3a !important;
+}
+[data-bs-theme="dark"] .accordion-button::after {
+    filter: invert(1); /* Flèche de l'accordéon */
+}
+
+/* 4. Textes secondaires et boutons de réponse */
+[data-bs-theme="dark"] .text-muted,
+[data-bs-theme="dark"] #chord-notes-text {
+    color: #adb5bd !important;
+}
+[data-bs-theme="dark"] .chord-guess-btn {
+    background-color: #252525 !important;
+    color: #e0e0e0 !important;
+    border-color: #404040 !important;
+}
+
+/* 5. LE SEUL TRUC QUI MARCHE POUR TOUS LES SVG (ABCJS & UKE-CHORD) */
+/* On cible les deux conteneurs et on leur applique l'inversion de couleurs */
+
+[data-bs-theme="dark"] #chord-diagram-render {
+    filter: invert(1) hue-rotate(180deg) !important;
+    background-color: transparent !important;
+}
+
+/* Douceur pour les alertes */
+[data-bs-theme="dark"] .alert-success { background-color: #112a1a !important; color: #72db93 !important; border-color: #1e462b !important; }
+[data-bs-theme="dark"] .alert-danger { background-color: #2d1216 !important; color: #f77285 !important; border-color: #4c1d24 !important; }
+
+/* --- SÉCURITÉ ET COHÉRENCE DU MODE NUITS BOOTSTRAP --- */
+
+[data-bs-theme="dark"] body {
+    background-color: #212529 !important; /* Fond sombre par défaut de Bootstrap 5 */
+    color: #f8f9fa !important;
+}
+
+/* Force la grande carte principale (et toutes les autres) à devenir sombres */
+[data-bs-theme="dark"] .card,
+[data-bs-theme="dark"] .main-card,
+[data-bs-theme="dark"] .bg-white,
+[data-bs-theme="dark"] .bg-light {
+    background-color: #2b3035 !important; /* Gris carte de Bootstrap 5 */
+    color: #f8f9fa !important;
+    border-color: #495057 !important;
+}
+
+/* Force les textes muets ou grisés à être lisibles la nuit */
+[data-bs-theme="dark"] .text-muted {
+    color: #adb5bd !important;
+}
+
+/* Corrige la couleur du texte à l'intérieur des inputs et sélecteurs de paramètres */
+[data-bs-theme="dark"] .form-select,
+[data-bs-theme="dark"] .form-control {
+    background-color: #212529 !important;
+    color: #f8f9fa !important;
+    border-color: #495057 !important;
+}
+
+/* --- COMPLÉMENT MODE SOMBRE POUR LE SCHÉMA D'ACCORD --- */
+
+[data-bs-theme="dark"] #chord-diagram-render {
+    /* On applique le filtre UNIQUEMENT sur le schéma d'accord */
+    filter: invert(0.9) hue-rotate(180deg) !important;
+    background-color: transparent !important;
+}
+
+/* Optionnel : Ajuste la bordure des boutons de réponse si nécessaire en mode sombre */
+[data-bs-theme="dark"] .chord-guess-btn {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+    </style>
+</head>
+<body>
+<div class="position-absolute top-0 end-0 p-3" style="z-index: 1050;">
+    <button id="btn-dark-mode" class="btn btn-outline-secondary rounded-circle shadow-sm" title="Mode Nuit">
+        <i class="bi bi-moon-fill" id="dark-mode-icon"></i>
+    </button>
+</div>
+<div class="container-fluid py-4" style="max-width: 600px;">
+    <h2 class="text-center mb-4 text-success fw-bold"><i class="bi bi-earbuds"></i> Chord Ear Trainer</h2>
+
+    <div id="feedback-message" class="alert d-none text-center fw-bold mb-3 shadow-sm" role="alert"></div>
+
+    <div class="card main-card text-center p-2 shadow-sm mb-2 bg-white" id="display-card">
+        <div id="phase-question" class="py-2">
+            <div class="hidden-chord"><i class="bi bi-question-circle-fill text-warning animate-pulse"></i></div>
+            <h4 class="mt-3 text-muted">Écoutez attentivement...</h4>
+        </div>
+
+        <div id="phase-answer" class="d-none">
+            <h2 id="revealed-chord-name" class="fw-bold text-success mb-2">-</h2>
+            <div class="row align-items-center">
+                <div class="col-6">
+                    <div id="notation-render"></div>
+					<div id="chord-notes-text" class="text-muted small fw-bold mt-1 text-center"></div>
+				</div>
+                <div class="col-6">
+                    <div id="chord-diagram-render"></div> </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="audio-player-container" class="d-none"></div>
+
+    <div class="d-flex justify-content-between text-muted small px-2 mb-4">
+        <span id="info-status">Prêt à commencer</span>
+        <span id="info-progress">Accord : 0/0</span>
+    </div>
+
+    <div class="d-grid gap-2 mb-4">
+        <button id="btn-start" class="btn btn-success btn-lg shadow"><i class="bi bi-play-fill"></i> Lancer le test d'oreille</button>
+        <button id="btn-stop" class="btn btn-danger btn-lg shadow d-none"><i class="bi bi-stop-fill"></i> Arrêter</button>
+    </div>
+
+    <div class="card p-3 mb-4 shadow-sm">
+        <h6 class="fw-bold mb-3 text-secondary text-uppercase" style="font-size:0.8rem;"><i class="bi bi-hand-index-thumb"></i> Cliquez sur votre réponse :</h6>
+        <div id="possible-chords-list" class="d-flex flex-wrap gap-2 justify-content-center">
+            </div>
+    </div>
+
+    <div class="accordion mb-4" id="paramAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseParams">
+                    <i class="bi bi-sliders me-2"></i> Configuration de l'exercice
+                </button>
+            </h2>
+            <div id="collapseParams" class="accordion-collapse collapse" data-bs-parent="#paramAccordion">
+                <div class="accordion-body bg-white">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Instrument cible</label>
+                        <select id="param-instrument" class="form-select">
+                            <option value="ukulele" selected>Ukulélé</option>
+                            <option value="guitar">Guitare</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Niveau / Catégorie</label>
+                        <div id="category-checkboxes">
+                            <div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="debutant" id="cat-deb" checked><label class="form-check-label" for="cat-deb">Débutant</label></div>
+                            <div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="intermediaire" id="cat-int"><label class="form-check-label" for="cat-int">Intermédiaire</label></div>
+                            <div class="form-check"><input class="form-check-input cat-check" type="checkbox" value="avance" id="cat-av"><label class="form-check-label" for="cat-av">Avancé</label></div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Mesures Question</label>
+                            <input type="number" id="param-meas-q" class="form-control" value="3" min="1">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Mesures Réponse</label>
+                            <input type="number" id="param-meas-a" class="form-control" value="2" min="1">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Tempo (BPM)</label>
+                            <input type="number" id="param-bpm" class="form-control" value="100" min="50">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Signature</label>
+                            <select id="param-beats" class="form-select">
+                                <option value="4" selected>4 Temps</option>
+                                <option value="3">3 Temps</option>
+                            </select>
+                        </div>
+                    </div>
+					
+					<div class="form-check form-switch mb-3">
+    <input class="form-check-input" type="checkbox" id="param-show-notes" checked>
+    <label class="form-check-label fw-bold" for="param-show-notes">Afficher le nom des notes</label>
+</div>
+					
+					<div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="param-random" checked>
+                        <label class="form-check-label fw-bold" for="param-random">Défilement aléatoire</label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fin de l'exercice</label>
+                        <select id="param-loop-mode" class="form-select">
+                            <option value="loop" selected>En boucle (Infini)</option>
+                            <option value="once">1 fois chaque accord</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./js/abcjs-basicfx.js"></script>
+<script>
+    // Patch de sécurité Android 7
+    if (!Element.prototype.replaceChildren) {
+        Element.prototype.replaceChildren = function(...newChildren) {
+            while (this.firstChild) { this.removeChild(this.firstChild); }
+            this.append(...newChildren);
+        };
+    }
+</script>
+<script src="./js/uke-chord.min.js"></script>
+<script src="./js/bootstrap.min.js"></script>
+
+<script>
+    // --- BDD CORRIGÉE (Notes avec octaves ABC explicites) ---
+    const chordLibrary = {
+        ukulele: {
+			debutant: [
+				{ name: "C", frets: "0003", abc: "[G4c4e4g4]", notes: "Sol Do Mi Sol" },
+				{ name: "Am", frets: "2000", abc: "[A4c4e4a4]", notes: "La Do Mi La" },
+				{ name: "F", frets: "2010", abc: "[A4c4f4a4]", notes: "La Do Fa La" },
+				{ name: "G", frets: "0232", abc: "[G4b4d'4g'4]", notes: "Sol Si Ré Sol" }
+			],
+			intermediaire: [
+				{ name: "C7", frets: "0001", abc: "[G4_b4c4e4]", notes: "Sol Sib Do Mi" }, // Exemple avec bémol
+				{ name: "Dm", frets: "2210", abc: "[A4d4f4a4]", notes: "La Ré Fa La" }
+			],
+			avance: [
+				{ name: "Cdim7", frets: "2323", abc: "[^F4^c4_e4a4]", notes: "Fa# Do# Mib La" } // Exemple avec dièses/bémols
+			]
+		},
+        guitar: {
+            debutant: [
+                { name: "Em", frets: "022000", abc: "[E,4B,4E4G4B4e4]" },
+                { name: "G", frets: "320003", abc: "[G,,4B,,4D4G4B4g4]" },
+                { name: "C", frets: "x32010", abc: "[C,4E4G4B4c4]" },
+                { name: "Am", frets: "x02210", abc: "[A,,4E4A4c4f4a4]" }
+            ],
+            intermediaire: [
+                { name: "E", frets: "022100", abc: "[E,4B,4E4^G4B4e4]" },
+                { name: "Dm", frets: "xx0231", abc: "[D4F4A4d4f4]" }
+            ],
+            avance: [
+                { name: "F", frets: "133211", position: "1", abc: "[F,,4C,4F4A4c4f4]" }
+            ]
+        }
+    };
+
+    let sessionChords = [];
+    let currentIndex = 0;
+    let isPlaying = false;
+    
+    // Variables de contrôle audio strictes
+    let animationSink = null; 
+    let currentTimeout1 = null;
+    let currentTimeout2 = null;
+
+    const btnStart = document.getElementById('btn-start');
+    const btnStop = document.getElementById('btn-stop');
+    const feedbackBox = document.getElementById('feedback-message');
+
+    function updatePossibleChordsList() {
+        const inst = document.getElementById('param-instrument').value;
+        const checkedCats = Array.from(document.querySelectorAll('.cat-check:checked')).map(cb => cb.value);
+        let list = [];
+        
+        checkedCats.forEach(cat => {
+            if(chordLibrary[inst] && chordLibrary[inst][cat]) {
+                list = list.concat(chordLibrary[inst][cat].map(c => c.name));
+            }
+        });
+        
+        // --- MODIFICATION ICI : On élimine les doublons de noms ---
+        // Array.from(new Set(list)) ne garde qu'une seule fois chaque nom d'accord
+        const uniqueList = Array.from(new Set(list));
+        uniqueList.sort();
+        
+        const container = document.getElementById('possible-chords-list');
+        container.innerHTML = '';
+        
+        if (uniqueList.length === 0) {
+            container.innerHTML = "<span class='text-muted small'>Aucune catégorie sélectionnée</span>";
+            return;
+        }
+
+        uniqueList.forEach(chordName => {
+            const btn = document.createElement('button');
+            btn.className = "btn btn-outline-dark chord-guess-btn";
+            btn.innerText = chordName;
+            btn.setAttribute('data-chord', chordName);
+            btn.addEventListener('click', () => verifyUserAnswer(chordName, btn));
+            container.appendChild(btn);
+        });
+    }
+
+    function verifyUserAnswer(clickedName, buttonElement) {
+        if (!isPlaying || sessionChords.length === 0) return;
+        
+        const correctName = sessionChords[currentIndex].name;
+        
+        document.querySelectorAll('.chord-guess-btn').forEach(btn => {
+            btn.className = "btn btn-outline-dark chord-guess-btn";
+        });
+
+        feedbackBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+
+        if (clickedName === correctName) {
+            buttonElement.className = "btn btn-success chord-guess-btn text-white shadow";
+            feedbackBox.className = "alert alert-success text-center fw-bold mb-3 shadow-sm";
+            feedbackBox.innerHTML = "<i class='bi bi-check-circle-fill'></i> Bravo ! C'est la bonne réponse !";
+        } else {
+            buttonElement.className = "btn btn-danger chord-guess-btn text-white shadow";
+            feedbackBox.className = "alert alert-danger text-center fw-bold mb-3 shadow-sm";
+            feedbackBox.innerHTML = "<i class='bi bi-x-circle-fill'></i> Ce n'est pas cet accord, réécoutez attentivement...";
+        }
+    }
+
+    // 1. Nouvelle fonction : On génère deux chaînes ABC distinctes
+    // Une courte pour le visuel (1 seule mesure), une longue pour l'audio
+    // Nouvelle fonction adaptative
+    function generateAbcString(chordAbc, measures, beats, bpm, isVisualOnly = false) {
+        if (isVisualOnly) {
+            // Version épurée : Juste la clé de Sol (K:C) et l'accord une seule fois
+            return `X:1\nK: C\nL: 1/4\n${chordAbc} ||`;
+        }
+
+        // Version complète pour l'audio (avec tempo, métrique et répétitions)
+        let measurePattern = "";
+        for(let i=0; i<beats; i++) { measurePattern += chordAbc + " "; }
+        
+        let allMeasures = [];
+        for(let m=0; m<measures; m++) { allMeasures.push(measurePattern); }
+        let musicBody = allMeasures.join(" | ");
+
+        return `X:1\nM: ${beats}/4\nQ: ${bpm}\nK: C\nL: 1/4\n${musicBody} ||`;
+    }
+
+
+
+    function playCurrentChordSequence() {
+        if(!isPlaying || currentIndex >= sessionChords.length) {
+            stopTrainer();
+            if(currentIndex >= sessionChords.length) alert("Exercice terminé !");
+            return;
+        }
+
+        feedbackBox.classList.add('d-none');
+        document.querySelectorAll('.chord-guess-btn').forEach(btn => {
+            btn.className = "btn btn-outline-dark chord-guess-btn";
+        });
+
+        if (animationSink) {
+            try { animationSink.stop(); } catch(e){}
+            animationSink = null;
+        }
+
+        const chord = sessionChords[currentIndex];
+        const beats = parseInt(document.getElementById('param-beats').value);
+        const bpm = parseInt(document.getElementById('param-bpm').value);
+        const mQ = parseInt(document.getElementById('param-meas-q').value);
+        const mA = parseInt(document.getElementById('param-meas-a').value);
+        const totalMeasures = mQ + mA;
+
+        document.getElementById('info-progress').innerText = `Accord : ${currentIndex + 1}/${sessionChords.length}`;
+        
+        document.getElementById('phase-question').classList.remove('d-none');
+        document.getElementById('phase-answer').classList.add('d-none');
+        document.getElementById('info-status').innerText = "Phase Écoute...";
+
+        // --- LA MODIFICATION EST ICI ---
+        // On génère le code ABC pour l'AUDIO (complet)
+        const abcAudioString = generateAbcString(chord.abc, totalMeasures, beats, bpm, false);
+        
+        // On génère le code ABC pour le VISUEL (épuré : true)
+        const abcVisualString = generateAbcString(chord.abc, 1, beats, bpm, true);
+        
+        // Rendu à l'écran (sans le responsive: "resize" comme vous l'avez ajusté)
+        const currentTuneObject = ABCJS.renderAbc("notation-render", abcVisualString)[0];
+        // Rendu pour l'audio
+        const audioTuneObject = ABCJS.renderAbc("audio-player-container", abcAudioString)[0];
+
+        if (ABCJS.synth.supportsAudio()) {
+            const synthSequence = new ABCJS.synth.CreateSynth();
+            
+            synthSequence.init({
+                visualObj: audioTuneObject, // Le synthé joue la version longue
+                options: { soundFontUrl: "https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM/" }
+            }).then(() => {
+                return synthSequence.prime();
+            }).then(() => {
+                if(!isPlaying) return;
+
+                animationSink = synthSequence;
+                synthSequence.start();
+
+                const secondsPerBeat = 60 / bpm;
+                const msPerMeasure = secondsPerBeat * beats * 1000;
+                const durationQuestionMs = msPerMeasure * mQ;
+                const durationTotalMs = msPerMeasure * totalMeasures;
+
+                // TIMEOUT PHASE RÉPONSE
+                currentTimeout1 = setTimeout(() => {
+                    if(!isPlaying) return;
+                    document.getElementById('info-status').innerText = "Visualisation des notes & schémas";
+                    document.getElementById('phase-question').classList.add('d-none');
+                    document.getElementById('phase-answer').classList.remove('d-none');
+                    
+                    document.getElementById('revealed-chord-name').innerText = chord.name;
+                    const pos = chord.position !== undefined ? chord.position : "0";
+                    document.getElementById('chord-diagram-render').innerHTML = `<uke-chord frets="${chord.frets}" position="${pos}"></uke-chord>`;
+					
+					// Affiche le nom des notes si la propriété existe dans le JSON, sinon laisse vide
+					// --- MODIFICATION ICI : Affichage conditionnel du nom des notes ---
+					const showNotesCheckbox = document.getElementById('param-show-notes').checked;
+					
+					if (showNotesCheckbox && chord.notes) {
+						document.getElementById('chord-notes-text').innerText = `Notes : ${chord.notes}`;
+					} else {
+						document.getElementById('chord-notes-text').innerText = ""; // On vide si décoché
+					}
+                    
+                    document.querySelectorAll('.chord-guess-btn').forEach(btn => {
+                        if(btn.getAttribute('data-chord') === chord.name) {
+                            btn.className = "btn btn-success chord-guess-btn text-white shadow";
+                        }
+                    });
+                }, durationQuestionMs);
+
+                // TIMEOUT PASSAGE ENCHAÎNEMENT SUIVANT
+                // TIMEOUT PASSAGE ENCHAÎNEMENT SUIVANT
+                currentTimeout2 = setTimeout(() => {
+                    if(!isPlaying) return;
+                    currentIndex++;
+                    if (currentIndex >= sessionChords.length) {
+                        if (document.getElementById('param-loop-mode').value === 'loop') {
+                            currentIndex = 0;
+                            // Respecte le choix de l'utilisateur même lors du bouclage automatique
+                            const isRandom = document.getElementById('param-random').checked;
+                            if (isRandom) {
+                                shuffleArray(sessionChords);
+                            }
+                        }
+                    }
+                    playCurrentChordSequence();
+                }, durationTotalMs + 1200);
+            }).catch(err => console.error("Erreur Synthé:", err));
+        }
+    }
+
+    function stopTrainer() {
+        isPlaying = false;
+        
+        if (animationSink) {
+            try {
+                animationSink.stop();
+            } catch(e) { console.log(e); }
+            animationSink = null;
+        }
+        
+        clearTimeout(currentTimeout1);
+        clearTimeout(currentTimeout2);
+        
+        // --- CORRECTION ICI : On utilise classList pour ne pas détruire le style ---
+        btnStart.classList.remove('d-none'); // On réaffiche le bouton Lancer (il garde son vert !)
+        btnStop.classList.add('d-none');    // On cache le bouton Arrêter
+        
+        feedbackBox.classList.add('d-none');
+        document.getElementById('info-status').innerText = "Exercice arrêté.";
+    }
+
+    function startTrainer() {
+        const inst = document.getElementById('param-instrument').value;
+        const checkedCats = Array.from(document.querySelectorAll('.cat-check:checked')).map(cb => cb.value);
+        let pool = [];
+
+        checkedCats.forEach(cat => {
+            if(chordLibrary[inst] && chordLibrary[inst][cat]) { pool = pool.concat(chordLibrary[inst][cat]); }
+        });
+
+        if(pool.length === 0) { alert("Sélectionnez au moins une catégorie !"); return; }
+
+        sessionChords = [...pool];
+        
+        const isRandom = document.getElementById('param-random').checked;
+        if (isRandom) {
+            shuffleArray(sessionChords);
+        }
+        
+        currentIndex = 0;
+        isPlaying = true;
+        
+        // --- CORRECTION ICI : On utilise classList.add pour masquer ---
+        btnStart.classList.add('d-none');       // On cache le bouton Lancer proprement
+        btnStop.classList.remove('d-none');    // On affiche le bouton Arrêter
+
+        playCurrentChordSequence();
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    document.getElementById('param-instrument').addEventListener('change', updatePossibleChordsList);
+    document.querySelectorAll('.cat-check').forEach(cb => cb.addEventListener('change', updatePossibleChordsList));
+    btnStart.addEventListener('click', startTrainer);
+    btnStop.addEventListener('click', stopTrainer);
+
+    updatePossibleChordsList();
+</script>
+<script>
+// --- LOGIQUE DU MODE NUIT COHÉRENTE AVEC BOOTSTRAP ---
+const btnDarkMode = document.getElementById('btn-dark-mode');
+const darkModeIcon = document.getElementById('dark-mode-icon');
+
+// Au chargement, on vérifie s'il y avait un choix enregistré
+const savedTheme = localStorage.getItem('theme') || 'light';
+applyTheme(savedTheme);
+
+btnDarkMode.addEventListener('click', () => {
+    const currentTheme = document.body.getAttribute('data-bs-theme');
+    const newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
+    applyTheme(newTheme);
+});
+
+function applyTheme(theme) {
+    document.body.setAttribute('data-bs-theme', theme);
+    localStorage.setItem('theme', theme);
+    
+    if (theme === 'dark') {
+        darkModeIcon.className = "bi bi-sun-fill text-warning"; // Soleil jaune
+        btnDarkMode.className = "btn btn-outline-warning rounded-circle shadow-sm";
+    } else {
+        darkModeIcon.className = "bi bi-moon-fill"; // Lune
+        btnDarkMode.className = "btn btn-outline-secondary rounded-circle shadow-sm";
+    }
+}
+</script>
+</body>
+</html>
