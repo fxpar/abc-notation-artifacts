@@ -1,5 +1,7 @@
 # abc-notation-artifacts
 
+Liste de petits outils pour aider à travailler un instrument ou à éditer ses partitions. 
+
 ## Chord change trainer
 [chord-change.html](chord-change.html) 
 
@@ -14,6 +16,13 @@ Paramètres:
 
 L'outil n'identifie pas si l'accord est bien joué ou non. 
 
+Librairies utilisé: 
+* pianosnake uke chord
+* bootstrap
+
+Code créé par IA (Gemini, je crois), et prompté par moi 😉
+Licence: CC BY-NC 4.0
+
 ## Ear chord trainer
 [chord-ear-trainer.html](chord-ear-trainer.html)
 
@@ -27,7 +36,14 @@ Paramètres:
 * afficher / Masquer le nom des notes
 * durée de l'exercice (défaut: boucle infinie)
 
+Librairies utilisées: 
+* pianosnake uke chord
+* abcjs Paul Rosen
+* bootstrap
 
+Code créé par IA (Gemini), et prompté par moi 😉
+
+Licence: CC BY-NC 4.0
 
 
 ## Grid creation
@@ -49,6 +65,13 @@ Paramètres:
 * [ ] Tester le mode "chordgrid" pour afficher la grille
 * [ ] Exporter l'abc transposé
 
+Librairies utilisées: 
+* abcjs Paul Rosen
+* bootstrap
+
+Code créé par IA (Gemini, je crois), et prompté par moi 😉
+
+Licence: CC BY-NC 4.0
 
 
 ##  Abc editor player
@@ -72,3 +95,16 @@ Fonctionnalités:
 * [ ] Export en midi
 * [ ] Amélioration de l'éditeur (propositions contextualisées)
 
+Librairies utilisées: 
+* abcjs Paul Rosen
+* bootstrap
+
+Code créé par IA (Gemini), et prompté par moi 😉
+
+Licence: CC BY-NC 4.0
+
+# Code source
+
+Le code de ces outils est disponible sur Github:
+
+ https://github.com/fxpar/abc-notation-artifacts
