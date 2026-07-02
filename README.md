@@ -13,6 +13,7 @@ Paramètres:
 * vitesse du tempo (défaut 80 bpm, mesure de 4 temps)
 * Défilement aléatoire ou dans l'ordre (défaut aléatoire)
 * durée de l'exercice (défaut boucle infinie)
+* Mode Jour / Nuit
 
 L'outil n'identifie pas si l'accord est bien joué ou non. 
 
@@ -35,6 +36,7 @@ Paramètres:
 * choix du tempo (défaut 100 bpm sur des mesures à 4 temps)
 * afficher / Masquer le nom des notes
 * durée de l'exercice (défaut: boucle infinie)
+* Mode Jour / Nuit
 
 Librairies utilisées: 
 * pianosnake uke chord
@@ -57,6 +59,7 @@ Paramètres:
   * Tango
   * Arpèges
 * Mesure à 4 temps / 3 temps
+* Mode Jour / Nuit
 
 
 À faire:
@@ -89,6 +92,7 @@ Fonctionnalités:
 * Jouer / Taire les accords d'accompagnement
 * Jouer / Taire la mélodie
 * Activer le métronome (rythme, nombre de mesures)
+* Mode Jour / Nuit
 
 À faire: 
 * [ ] Ajouter les tablatures avec l'accordement
