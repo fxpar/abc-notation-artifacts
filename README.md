@@ -5,7 +5,7 @@ Liste de petits outils pour aider à travailler un instrument ou à éditer ses 
 ## Chord change trainer
 [chord-change.html](chord-change.html) 
 
-Entrainement au changement d'accords pour ukulélé ou guitare. On voit le prochain accord pour se préparer, et on entend le métronome.
+**Entrainement au changement d'accords pour ukulélé ou guitare. On voit le prochain accord pour se préparer, et on entend le métronome.**
 
 Paramètres: 
 * choix de l'instrument (défaut ukulélé)
@@ -26,7 +26,7 @@ Licence: CC BY-NC 4.0
 ## Ear chord trainer
 [chord-ear-trainer.html](chord-ear-trainer.html)
 
-Entrainement à la reconnaissance d'accord. L'accord est joué sur deux mesure. La réponse est affichée avec les notes sur la portée, le nom des notes et le schéma d'accord pour ukulélé ou guitare. L'audio continue durant deux mesures pour bien assosier la réponse au son.
+**Entrainement à la reconnaissance d'accord. L'accord est joué sur deux mesure. La réponse est affichée avec les notes sur la portée, le nom des notes et le schéma d'accord pour ukulélé ou guitare. L'audio continue durant deux mesures pour bien assosier la réponse au son.**
 
 Paramètres:
 * choix de l'instrument pour le schéma d'accord
@@ -49,7 +49,7 @@ Licence: CC BY-NC 4.0
 ## Grid creation
 [abc-grid.html](abc-grid.html)
 
-Création rapide d'un accompagnement à partir d'une liste ecrite d'accord (sous forme de grille écrite en texte). On tape la série d'accords et on obtient les accords sous forme de partition et d'audio. Possibilité de jouer en boucle.
+**Création rapide d'un accompagnement à partir d'une liste ecrite d'accord (sous forme de grille écrite en texte). On tape la série d'accords et on obtient les accords sous forme de partition et d'audio. Possibilité de jouer en boucle.**
 
 Paramètres:
 * Différents mode de jeux de l'accompagnement
@@ -77,7 +77,7 @@ Licence: CC BY-NC 4.0
 ##  Abc editor player
 [abc-editor-player.html](abc-editor-player.html)
 
-Première version d'un éditeur abc notation. Visualisation de la partition et création de l'audio. Plus de paramètres sont disponibles en cliquant sur les "⁝" à la fin de la barre du player, notamment pour la transposition.
+**Première version d'un éditeur abc notation. Visualisation de la partition et création de l'audio. Plus de paramètres sont disponibles en cliquant sur les "⁝" à la fin de la barre du player, notamment pour la transposition.**
 
 Fonctionnalités:
 * Visualisation de la partition
