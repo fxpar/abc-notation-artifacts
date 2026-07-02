@@ -46,6 +46,8 @@ Paramètres:
 À faire:
 * [ ] Autoriser les mesures composées de plusieurs accords.
 * [ ] Autoriser les schémas personnalisés de rythme de l'accompagnement
+* [ ] Tester le mode "chordgrid" pour afficher la grille
+* [ ] Exporter l'abc transposé
 
 
 
@@ -56,7 +58,9 @@ Première version d'un éditeur abc notation. Visualisation de la partition et c
 
 Fonctionnalités:
 * Visualisation de la partition
-* Audio
+* Jeu de l'Audio
+* Chargement / Export d'une bibliothèque de morceaux
+* Renommer un morceau de la bibliothèque
 * Transposition
 * Augmentation du swing
 * Jouer / Taire les accords d'accompagnement
