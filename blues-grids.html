@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entraînement Accords - Jazz/Blues</title>
+    <!-- Bootstrap 5.3 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Script Uke-Chord -->
+    <script src="https://pianosnake.github.io/uke-chord/uke-chord.js"></script>
+    <style>
+        .chord-card {
+            text-align: center;
+            padding: 10px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.02);
+            transition: all 0.2s;
+        }
+        [data-bs-theme="dark"] .chord-card {
+            border-color: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02);
+        }
+		/* Mode nuit par défaut : on inverse les couleurs du diagramme */
+			[data-bs-theme="dark"] uke-chord {
+				filter: invert(0.9) hue-rotate(180deg);
+			}
+
+			/* Quand la mesure est active en mode nuit : on annule le filtre */
+			[data-bs-theme="dark"] .active-measure uke-chord {
+				filter: none;
+			}
+        .chord-card.active-measure {
+            background-color: #ffc107 !important;
+            color: #000 !important;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+        }
+        .beat-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+            background-color: #ccc;
+            margin: 0 4px;
+        }
+        .beat-indicator.active-beat {
+            background-color: #0d6efd;
+            transform: scale(1.2);
+        }
+        uke-chord {
+            display: block;
+            margin: 0 auto;
+            max-width: 120px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barre de navigation / Header -->
+    <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom mb-4">
+        <div class="container">
+            <span class="navbar-brand fw-bold"><i class="bi bi-music-note-beamed me-2"></i>Uke & Git Practice</span>
+            <button class="btn btn-outline-secondary" id="themeToggle">
+                <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <!-- Configuration -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Configuration de l'exercice</h5>
+                <form id="configForm" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Instrument</label>
+                        <select class="form-select" id="instrumentSelect">
+                            <option value="ukulele" selected>Ukulélé</option>
+                            <option value="guitar">Guitare</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Gamme / Tonalité</label>
+                        <select class="form-select" id="keySelect">
+							<option value="A" selected>La (A)</option>
+							<option value="C">Do (C)</option>
+							<option value="G">Sol (G)</option>
+							<option value="F">Fa (F)</option>
+							<option value="D">Ré (D)</option>
+							<option value="Bb">Si bémol (Bb)</option>
+							<option value="Eb">Mi bémol (Eb)</option>
+						</select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Structure par défaut</label>
+                        <select class="form-select" id="structureSelect">
+                            <option value="I-IV-V" selected>Blues/Jazz Standard (I-IV-V)</option>
+							<option value="ii-V-I">Jazz Classique (ii-V-I)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Générer les grilles</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Section des Grilles d'accords -->
+        <div id="gridsContainer" style="display: none;">
+            
+            <!-- Grille 1 -->
+            <div class="card shadow-sm mb-4 border-start border-primary border-4">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Grille 1 : Niveau Standard (I - IV - V7)</h5>
+                    <p class="text-muted small">Structure : I-I-I-I | IV-IV-I-I | V7-V7-I-I</p>
+                    <div class="row row-cols-2 row-cols-sm-4 row-cols-md-6 g-3 content-grid" id="grid1"></div>
+                    <div class="mt-3 p-3 bg-body-secondary rounded d-flex flex-wrap align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <button class="btn btn-success btn-play" data-grid="1"><i class="bi bi-play-fill"></i> Jouer</button>
+                            <div class="beats-display" id="beats-grid1">
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-2 mt-sm-0">
+                            <label class="small text-nowrap">Tempo (BPM) :</label>
+                            <input type="number" class="form-control form-control-sm tempo-input" value="100" style="width: 80px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grille 2 -->
+            <div class="card shadow-sm mb-4 border-start border-success border-4">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Grille 2 : Tout en Septième (I7 - IV7 - V7)</h5>
+                    <p class="text-muted small">Structure : I7-I7-I7-I7 | IV7-IV7-I7-I7 | V7-V7-I7-I7</p>
+                    <div class="row row-cols-2 row-cols-sm-4 row-cols-md-6 g-3 content-grid" id="grid2"></div>
+                    <div class="mt-3 p-3 bg-body-secondary rounded d-flex flex-wrap align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <button class="btn btn-success btn-play" data-grid="2"><i class="bi bi-play-fill"></i> Jouer</button>
+                            <div class="beats-display" id="beats-grid2">
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-2 mt-sm-0">
+                            <label class="small text-nowrap">Tempo (BPM) :</label>
+                            <input type="number" class="form-control form-control-sm tempo-input" value="100" style="width: 80px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grille 3 -->
+            <div class="card shadow-sm mb-4 border-start border-warning border-4">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">Grille 3 : Alternée & Enrichie</h5>
+                    <p class="text-muted small">Structure : I-IV7-I-I7 | IV-IV7-I-I7 | V7-IV7-I-V7</p>
+                    <div class="row row-cols-2 row-cols-sm-4 row-cols-md-6 g-3 content-grid" id="grid3"></div>
+                    <div class="mt-3 p-3 bg-body-secondary rounded d-flex flex-wrap align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <button class="btn btn-success btn-play" data-grid="3"><i class="bi bi-play-fill"></i> Jouer</button>
+                            <div class="beats-display" id="beats-grid3">
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-2 mt-sm-0">
+                            <label class="small text-nowrap">Tempo (BPM) :</label>
+                            <input type="number" class="form-control form-control-sm tempo-input" value="100" style="width: 80px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+			
+			<!-- Grille 4 -->
+            <div class="card shadow-sm mb-4 border-start border-danger border-4">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Grille 4 : variantes d'accords</h5>
+                    <p class="text-muted small">Structure : I_v2-IV7_v2-I_v2-I7 IV-IV7-I-I7 V7_v2-IV7-I-V7"</p>
+                    <div class="row row-cols-2 row-cols-sm-4 row-cols-md-6 g-3 content-grid" id="grid4"></div>
+                    <div class="mt-3 p-3 bg-body-secondary rounded d-flex flex-wrap align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <button class="btn btn-success btn-play" data-grid="4"><i class="bi bi-play-fill"></i> Jouer</button>
+                            <div class="beats-display" id="beats-grid4">
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                                <span class="beat-indicator"></span>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-2 mt-sm-0">
+                            <label class="small text-nowrap">Tempo (BPM) :</label>
+                            <input type="number" class="form-control form-control-sm tempo-input" value="100" style="width: 80px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script></script>
+<!-- // Bibliothèque d'accords corrigée et formatée pour <uke-chord> (Sans les virgules) -->
+<script src="./chord-library.js"></script>
+    <!-- Script Logique Applicative -->
+    <script>
+        
+        
+
+        // Définition des structures harmoniques demandées (12 mesures)
+        const structures = {
+    "I-IV-V": {
+        grid1: ["I", "I", "I", "I", "IV", "IV", "I", "I", "V7", "V7", "I", "I"],
+        grid2: ["I7", "I7", "I7", "I7", "IV7", "IV7", "I7", "I7", "V7", "V7", "I7", "I7"],
+        grid3: ["I", "IV7", "I", "I7", "IV", "IV7", "I", "I7", "V7", "IV7", "I", "V7"],
+		grid4: ["I_v2", "IV7_v2", "I_v2", "I7", "IV", "IV7", "I", "I7", "V7_v2", "IV7", "I", "V7"]
+    },
+    "ii-V-I": { // Exemple de structure jazz différente à adapter avec vos degrés
+        grid1: ["ii", "ii", "V", "V", "I", "I", "I", "I", "ii", "V", "I", "I"],
+        grid2: ["ii7", "ii7", "V7", "V7", "I7", "I7", "I7", "I7", "ii7", "V7", "I7", "I7"],
+        grid3: ["ii", "V7", "I", "I7", "ii", "V7", "I", "I7", "ii7", "V7", "I", "I"],
+		grid4: ["I_v2", "IV7_v2", "I_v2", "I7", "IV", "IV7", "I", "I7", "V7_v2", "IV7", "I", "V7"]
+    }
+};
+
+        // Mappage des degrés selon la tonalité choisie (I, IV, V) pour la tonalité "A"
+        // Mappage des degrés selon la tonalité choisie
+		const degreesMap = {
+			"A": { 
+				"I": "A", "I7": "A7", "ii": "Bm", "ii7": "Bm7", "IV": "D", "IV7": "D7", "V": "E", "V7": "E7" 
+			},
+			"C": { 
+				"I": "C", "I7": "C7", "ii": "Dm", "ii7": "Dm7", "IV": "F", "IV7": "F7", "V": "G", "V7": "G7" 
+			},
+			"G": { 
+				"I": "G", "I7": "G7", "ii": "Am", "ii7": "Am7", "IV": "C", "IV7": "C7", "V": "D", "V7": "D7" 
+			},
+			"F": { 
+				"I": "F", "I7": "F7", "ii": "Gm", "ii7": "Gm7", "IV": "Bb", "IV7": "Bb7", "V": "C", "V7": "C7" 
+			},
+			"D": { 
+				"I": "D", "I7": "D7", "ii": "Em", "ii7": "Em7", "IV": "G", "IV7": "G7", "V": "A", "V7": "A7" 
+			},
+			"Bb": { 
+				"I": "Bb", "I7": "Bb7", "ii": "Cm", "ii7": "Cm7", "IV": "Eb", "IV7": "Eb7", "V": "F", "V7": "F7" 
+			},
+			"Eb": { 
+				"I": "Eb", "I7": "Eb7", "ii": "Fm", "ii7": "Fm7", "IV": "Ab", "IV7": "Ab7", "V": "Bb", "V7": "Bb7" 
+			}
+		};
+
+        // Gestion du Mode Sombre / Clair
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlTag = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+
+        themeToggle.addEventListener('click', () => {
+            if (htmlTag.getAttribute('data-bs-theme') === 'light') {
+                htmlTag.setAttribute('data-bs-theme', 'dark');
+                themeIcon.className = 'bi bi-sun-fill';
+            } else {
+                htmlTag.setAttribute('data-bs-theme', 'light');
+                themeIcon.className = 'bi bi-moon-stars-fill';
+            }
+        });
+
+        // Génération des grilles au clic sur le formulaire
+        document.getElementById('configForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const inst = document.getElementById('instrumentSelect').value;
+            const key = document.getElementById('keySelect').value;
+            
+			// 1. On récupère la valeur choisie dans la liste (ex: "I-IV-V")
+			const substructure = document.getElementById('structureSelect').value;
+			
+			// 2. CORRECTION : On utilise les crochets [substructure] pour cibler la bonne catégorie
+			generateGrid('grid1', structures[substructure].grid1, inst, key);
+			generateGrid('grid2', structures[substructure].grid2, inst, key);
+			generateGrid('grid3', structures[substructure].grid3, inst, key);
+            generateGrid('grid4', structures[substructure].grid4, inst, key);
+			
+            document.getElementById('gridsContainer').style.display = 'block';
+        });
+
+        function generateGrid(gridId, structure, instrument, key) {
+			const container = document.getElementById(gridId);
+			container.innerHTML = '';
+			
+			structure.forEach((deg, index) => {
+				// 1. On sépare le degré de base du suffixe (ex: "I_v2" -> ["I", "v2"] ou "I" -> ["I"])
+				const parts = deg.split('_');
+				const baseDegree = parts[0];     // "I"
+				const suffix = parts[1];         // "v2" ou undefined
+				
+				// 2. On trouve le nom de l'accord de base via le degreesMap (ex: "A")
+				const baseChordName = degreesMap[key][baseDegree];
+				
+				// 3. Si un suffixe existe, on le rajoute au nom pour chercher le doublon (ex: "A_v2")
+				const chordLookupKey = suffix ? `${baseChordName}_${suffix}` : baseChordName;
+				
+				// 4. On récupère les données dans la bibliothèque d'accords de l'instrument
+				const chordData = chordLibrary[instrument][chordLookupKey];
+				
+				const col = document.createElement('div');
+				col.className = 'col';
+				col.id = `${gridId}-m-${index}`;
+				
+				if (chordData) {
+					col.innerHTML = `
+						<div class="chord-card shadow-sm h-100">
+							<!-- On affiche le vrai nom harmonique (ex: "A") sans le "_v2" -->
+							<div class="fw-bold mb-1 fs-5">${chordData.name}</div>
+							<div class="text-muted small mb-2">Mesure ${index + 1} (${deg})</div>
+							<uke-chord 
+								name="${chordData.name}" 
+								frets="${chordData.frets}" 
+								barre="${chordData.barre || '0000'}" 
+								fingers="${chordData.fingers}" 
+								sub="" 
+								position="${chordData.position}" 
+								length="5">
+							</uke-chord>
+						</div>
+					`;
+				} else {
+					col.innerHTML = `
+						<div class="chord-card text-danger">
+							<div>Inconnu</div>
+							<small>${chordLookupKey}</small>
+						</div>`;
+				}
+				container.appendChild(col);
+			});
+		}
+
+        // Système de Lecture / Métronome
+        let playbackInterval = null;
+        let currentGridPlaying = null;
+
+        document.querySelectorAll('.btn-play').forEach(button => {
+            button.addEventListener('click', function() {
+                const gridNum = this.getAttribute('data-grid');
+                const gridId = `grid${gridNum}`;
+                
+                // Si on clique sur le bouton alors que ça joue déjà sur cette grille : on arrête
+                if (currentGridPlaying === gridId) {
+                    stopPlayback();
+                    return;
+                }
+                
+                // Si une autre grille jouait, on l'arrête d'abord
+                if (playbackInterval) stopPlayback();
+                
+                startPlayback(gridNum, gridId, this);
+            });
+        });
+
+        function startPlayback(gridNum, gridId, buttonElement) {
+            currentGridPlaying = gridId;
+            buttonElement.innerHTML = '<i class="bi bi-stop-fill"></i> Arrêter';
+            buttonElement.classList.replace('btn-success', 'btn-danger');
+
+            const tempo = parseInt(buttonElement.closest('.card-body').querySelector('.tempo-input').value) || 100;
+            const intervalMs = (60 / tempo) * 1000; // Durée d'un temps (beat) en ms
+
+            let currentMeasure = 0;
+            let currentBeat = 0;
+            const totalMeasures = 12;
+            const beatsPerMeasure = 4;
+
+            const indicators = document.querySelectorAll(`#beats-${gridId} .beat-indicator`);
+
+            playbackInterval = setInterval(() => {
+                // Nettoyer les anciennes classes actives de la mesure précédente
+                document.querySelectorAll(`#${gridId} .chord-card`).forEach(el => el.classList.remove('active-measure'));
+                indicators.forEach(el => el.classList.remove('active-beat'));
+
+                // Mettre en surbrillance la mesure en cours
+                const measureEl = document.getElementById(`${gridId}-m-${currentMeasure}`);
+                if (measureEl) {
+                    measureEl.querySelector('.chord-card').classList.add('active-measure');
+                    // Défilement automatique doux si la grille dépasse de l'écran
+                    measureEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                }
+
+                // Activer le point du temps (beat) visuel
+                if (indicators[currentBeat]) {
+                    indicators[currentBeat].classList.add('active-beat');
+                }
+
+                // Avancement de la rythmique
+                currentBeat++;
+                if (currentBeat >= beatsPerMeasure) {
+                    currentBeat = 0;
+                    currentMeasure++;
+                }
+
+                // Fin de la grille (boucle ou arrêt)
+                if (currentMeasure >= totalMeasures) {
+                    currentMeasure = 0; // Recommence au début (Boucle)
+                }
+
+            }, intervalMs);
+        }
+
+        function stopPlayback() {
+            clearInterval(playbackInterval);
+            playbackInterval = null;
+            
+            // Réinitialisation des styles visuels
+            document.querySelectorAll('.chord-card').forEach(el => el.classList.remove('active-measure'));
+            document.querySelectorAll('.beat-indicator').forEach(el => el.classList.remove('active-beat'));
+            
+            // Réinitialisation des boutons
+            document.querySelectorAll('.btn-play').forEach(btn => {
+                btn.innerHTML = '<i class="bi bi-play-fill"></i> Jouer';
+                btn.classList.replace('btn-danger', 'btn-success');
+            });
+            
+            currentGridPlaying = null;
+        }
+    </script>
+    
+    <!-- Script optionnel Bootstrap Bundle (JS) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

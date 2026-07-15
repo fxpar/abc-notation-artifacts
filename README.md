@@ -2,6 +2,26 @@
 
 Liste de petits outils pour aider à travailler un instrument ou à éditer ses partitions. 
 
+## Grille de blues trainer
+👉 [blues-grids.html](blues-grids.html) 
+
+**Entrainement au changement sur des grilles de blues pour ukulélé ou guitare. 4 grilles proposée, de simple à complexe. On voit le schéma de chaque accord et le métronome glisse de schéma en schéma.**
+
+Paramètres: 
+* choix de l'instrument (défaut ukulélé)
+* choix du type de grille (défaut I-IV-V)
+* choix de la gamme (défaut A)
+* vitesse du tempo (défaut 100 bpm)
+* marche / Arrêt (boucle infinie)
+* Mode Jour / Nuit
+
+Librairies utilisé: 
+* pianosnake uke chord
+* bootstrap
+
+Code créé par IA (Gemini), et prompté par moi 😉
+Licence: CC BY-NC 4.0
+
 ## Chord change trainer
 👉 [chord-change.html](chord-change.html) 
 
