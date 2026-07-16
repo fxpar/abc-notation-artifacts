@@ -12,9 +12,11 @@ Paramètres:
 * choix du type d'accord (plus de 40, multi select)
 * choix de la position (de 1 à 4, multi select)
 * Triable par Gamme ou par type d'accord
+* Mode jour / nuit
 
 Librairies utilisé: 
-* pianosnake uke chord
+* [uke chord](https://github.com/pianosnake/uke-chord)(MIT Licence)
+* [chord-db](https://github.com/tombatossals/chords-db) (MIT licence) 
 * bootstrap
 
 Code créé par IA (Gemini), et prompté par moi 😉
