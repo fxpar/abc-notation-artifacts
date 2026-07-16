@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ukulele accords encyclopédie</title>
+    <!-- Bootstrap 5.3 CDN ou Local -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Script Uke-Chord -->
+    <script src="https://pianosnake.github.io/uke-chord/uke-chord.js"></script>
+    <style>
+        .chord-card {
+            text-align: center;
+            padding: 15px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.02);
+            transition: all 0.2s;
+            height: 100%;
+        }
+        [data-bs-theme="dark"] .chord-card {
+            border-color: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02);
+        }
+        /* Mode nuit par défaut : on inverse les couleurs du diagramme */
+        [data-bs-theme="dark"] uke-chord {
+            filter: invert(0.9) hue-rotate(180deg);
+        }
+        uke-chord {
+            display: block;
+            margin: 0 auto;
+            max-width: 120px;
+        }
+        /* Style pour les listes de sélection à choix multiples */
+        .search-select {
+            height: 120px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barre de navigation / Header -->
+    <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom mb-4">
+        <div class="container">
+            <span class="navbar-brand fw-bold"><i class="bi bi-music-note-beamed me-2"></i>Uke encyclopédie</span>
+            <button class="btn btn-outline-secondary" id="themeToggle">
+                <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <!-- Formulaire de Recherche & Filtrage -->
+        <div class="card p-4 mb-4 shadow-sm">
+            <h5 class="card-title mb-3"><i class="bi bi-search me-2"></i>Moteur de recherche d'accords</h5>
+            <div class="row g-3">
+                
+                <!-- Sélection des Fondamentales (Keys) -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Fondamentale(s) (Ctrl+Clic)</label>
+                    <select id="selectKeys" class="form-select search-select" multiple>
+                        <!-- Rempli dynamiquement -->
+                    </select>
+                    <div class="form-text">Laissez vide pour tout afficher</div>
+                </div>
+
+                <!-- Sélection des Suffixes (Types d'accord) -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Type(s) d'accord (Ctrl+Clic)</label>
+                    <select id="selectSuffixes" class="form-select search-select" multiple>
+                        <!-- Rempli dynamiquement -->
+                    </select>
+                    <div class="form-text">Laissez vide pour tout afficher</div>
+                </div>
+
+                <!-- Sélection des Variantes (Positions) -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Position / Variante (Ctrl+Clic)</label>
+                    <select id="selectPositions" class="form-select search-select" multiple>
+                        <option value="0" selected>1ère Position</option>
+                        <option value="1">2ème Position</option>
+                        <option value="2">3ème Position</option>
+                        <option value="3">4ème Position</option>
+                    </select>
+                    <div class="form-text">Sélectionnez les variantes voulues</div>
+                </div>
+
+                <!-- Options de tri et bouton de réinitialisation -->
+                <div class="col-md-3 d-flex flex-column justify-content-between">
+                    <div>
+                        <label class="form-label fw-semibold">Trier les résultats par :</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="sortOrder" id="sortByGamma" value="gamma" checked>
+                            <label class="form-check-label" for="sortByGamma">
+                                Gamme / Fondamentale (A, B, C...)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="sortOrder" id="sortByType" value="type">
+                            <label class="form-check-label" for="sortByType">
+                                Type d'accord (major, minor...)
+                            </label>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-danger w-100 mt-3" id="btnReset"><i class="bi bi-arrow-counterclockwise me-1"></i>Réinitialiser</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Section des Grilles d'accords -->
+        <h4 class="mb-3" id="resultsCount">0 accord trouvé</h4>
+        <div id="schemaContainer" class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
+            <!-- Rempli dynamiquement en JS -->
+        </div>
+    </div>
+
+    <!-- Chargement de la bibliothèque de données -->
+    <script src="./ukulele.js"></script>
+
+    <!-- Script Logique Applicative -->
+    <script>
+        // --- 1. Gestion des thèmes (Sombre / Clair) ---
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlEl = document.documentElement;
+
+        themeToggle.addEventListener('click', () => {
+            if (htmlEl.getAttribute('data-bs-theme') === 'dark') {
+                htmlEl.setAttribute('data-bs-theme', 'light');
+                themeIcon.className = 'bi bi-moon-stars-fill';
+            } else {
+                htmlEl.setAttribute('data-bs-theme', 'dark');
+                themeIcon.className = 'bi bi-sun-fill';
+            }
+        });
+
+        // --- 2. Initialisation des filtres à partir du fichier ukulele.js ---
+        const selectKeys = document.getElementById('selectKeys');
+        const selectSuffixes = document.getElementById('selectSuffixes');
+        const selectPositions = document.getElementById('selectPositions');
+        const container = document.getElementById('schemaContainer');
+        const resultsCountText = document.getElementById('resultsCount');
+
+        // Alimenter le select des Fondamentales (Keys)
+        chordLibrary.keys.forEach(key => {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = key;
+            selectKeys.appendChild(opt);
+        });
+
+        // Alimenter le select des Suffixes (Types)
+        chordLibrary.suffixes.forEach(suffix => {
+            const opt = document.createElement('option');
+            opt.value = suffix;
+            opt.textContent = suffix;
+            selectSuffixes.appendChild(opt);
+        });
+
+        // --- 3. Logique de filtrage et de tri ---
+        function getSelectedValues(selectElement) {
+            return Array.from(selectElement.selectedOptions).map(opt => opt.value);
+        }
+
+        function searchChords() {
+            const selectedKeys = getSelectedValues(selectKeys);
+            const selectedSuffixes = getSelectedValues(selectSuffixes);
+            // On convertit les index des positions en entiers
+            const selectedPositions = getSelectedValues(selectPositions).map(Number);
+            
+            const sortBy = document.querySelector('input[name="sortOrder"]:checked').value;
+            const results = [];
+
+            // Étape 1 : Filtrage
+            // On parcourt toutes les notes (fondamentales) existantes dans la bibliothèque
+            Object.keys(chordLibrary.chords).forEach(keyName => {
+                // Filtre sur la fondamentale si sélectionnée
+                if (selectedKeys.length > 0 && !selectedKeys.includes(keyName)) return;
+
+                const chordsList = chordLibrary.chords[keyName];
+
+                chordsList.forEach(chord => {
+                    // Filtre sur le type d'accord si sélectionné
+                    if (selectedSuffixes.length > 0 && !selectedSuffixes.includes(chord.suffix)) return;
+
+                    // Parcourir les positions demandées
+                    chord.positions.forEach((position, index) => {
+                        // Filtre sur l'index de position demandé
+                        if (selectedPositions.length > 0 && !selectedPositions.includes(index)) return;
+
+                        // On prépare un objet structuré pour l'affichage et le tri
+                        results.push({
+                            key: chord.key,
+                            suffix: chord.suffix,
+                            positionIndex: index + 1, // Pour afficher "Pos. 1", "Pos. 2"...
+                            baseFret: position.baseFret-1,
+                            frets: position.frets.join(""),
+                            fingers: position.fingers.join(""),
+                            barres: position.barres.join("") || '0000'
+                        });
+                    });
+                });
+            });
+
+            // Étape 2 : Tri des résultats obtenus
+            results.sort((a, b) => {
+                if (sortBy === 'gamma') {
+                    // Tri primaire par Fondamentale
+                    if (a.key !== b.key) {
+                        return chordLibrary.keys.indexOf(a.key) - chordLibrary.keys.indexOf(b.key);
+                    }
+                    // Tri secondaire par Suffixe
+                    return a.suffix.localeCompare(b.suffix);
+                } else {
+                    // Tri primaire par Type d'accord
+                    if (a.suffix !== b.suffix) {
+                        return a.suffix.localeCompare(b.suffix);
+                    }
+                    // Tri secondaire par Fondamentale
+                    return chordLibrary.keys.indexOf(a.key) - chordLibrary.keys.indexOf(b.key);
+                }
+            });
+
+            // Étape 3 : Rendu HTML
+            renderResults(results);
+        }
+
+        // --- 4. Rendu visuel dans la grille ---
+        function renderResults(chords) {
+            container.innerHTML = "";
+            resultsCountText.textContent = `${chords.length} accord${chords.length > 1 ? 's' : ''} trouvé${chords.length > 1 ? 's' : ''}`;
+
+            chords.forEach(chord => {
+                const col = document.createElement('div');
+                col.className = 'col';
+
+                col.innerHTML = `
+                    <div class="chord-card shadow-sm">
+                        <div class="fw-bold fs-5 text-primary">${chord.key} <span class="text-muted fs-6">${chord.suffix}</span></div>
+                        <div class="badge bg-secondary mb-2">Pos. ${chord.positionIndex}</div>
+                        <uke-chord 
+                            name="${chord.key}${chord.suffix === 'major' ? '' : ' ' + chord.suffix}" 
+                            frets="${chord.frets}" 
+                            barre="${chord.barres}" 
+                            fingers="${chord.fingers}" 
+                            sub="" 
+                            position="${chord.baseFret}" 
+                            length="5">
+                        </uke-chord>
+                    </div>
+                `;
+                container.appendChild(col);
+            });
+        }
+
+        // --- 5. Écouteurs d'événements ---
+        [selectKeys, selectSuffixes, selectPositions].forEach(select => {
+            select.addEventListener('change', searchChords);
+        });
+
+        document.querySelectorAll('input[name="sortOrder"]').forEach(radio => {
+            radio.addEventListener('change', searchChords);
+        });
+
+        document.getElementById('btnReset').addEventListener('click', () => {
+            selectKeys.selectedIndex = -1;
+            selectSuffixes.selectedIndex = -1;
+            
+            // On remet la sélection par défaut de la position 1
+            Array.from(selectPositions.options).forEach((opt, idx) => {
+                opt.selected = idx === 0;
+            });
+
+            document.getElementById('sortByGamma').checked = true;
+            searchChords();
+        });
+
+        // Lancement initial de la recherche au chargement de la page
+        searchChords();
+    </script>
+    
+    <!-- Script Bootstrap Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
