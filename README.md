@@ -2,6 +2,24 @@
 
 Liste de petits outils pour aider à travailler un instrument ou à éditer ses partitions. 
 
+## Moteur de recherche d'accord de ukulele
+👉 [ukulele-chords-search.html](ukulele-chords-search.html) 
+
+**Plus de 2000 position d'accord en schéma. Filtrable par fondamentale, par type d'accord et par position.**
+
+Paramètres: 
+* choix de la fondamentatle (multi select)
+* choix du type d'accord (plus de 40, multi select)
+* choix de la position (de 1 à 4, multi select)
+* Triable par Gamme ou par type d'accord
+
+Librairies utilisé: 
+* pianosnake uke chord
+* bootstrap
+
+Code créé par IA (Gemini), et prompté par moi 😉
+Licence: CC BY-NC 4.0
+
 ## Grille de blues trainer
 👉 [blues-grids.html](blues-grids.html) 
 
