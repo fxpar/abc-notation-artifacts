@@ -1,9 +1,34 @@
 # abc-notation-artifacts
 
-Liste de petits outils pour aider à travailler un instrument ou à éditer ses partitions. 
+Liste de petits outils pour aider à travailler un instrument ou à éditer ses partitions. (en abc ou non).
+
+## Metronome graduel
+👉 [metronome-graduel](metronome-graduel.html) 
+
+**Un métronome "geek" pour s'entrainer en accélérant (ou en décélérant), soit de manière simple, soit en utilisant des formules complexe: rester 3 mesures au même tempo, accélerer les 4 suivantes, revenir à un rythme intermédiaire...**
+
+
+|Fonctionnalité|Statut|
+|---|---|
+|Métronome simple (formule vide)|✅|
+|Progression personnalisée (R / C / L)|✅|
+|Visualisation des beats avec temps fort|✅|
+|Audio différencié (aigu/grave)|✅|
+|Presets cards + boutons rapides|✅|
+|Mode nuit avec sauvegarde|✅|
+|Curseur de tempo|✅|
+|Responsive mobile/desktop|✅|
+|Icônes Bootstrap modernes|✅|
+
+Librairies utilisé: 
+* bootstrap
+* boostrap-icons
+
+Code créé par IA (Deepseek), et prompté par moi 😉
+Licence: CC BY-NC 4.0
 
 ## Moteur de recherche d'accord de ukulele
-👉 [ukulele-chords-search.html](ukulele-chords-search.html) 
+👉 [ukulele-chords-search](ukulele-chords-search.html) 
 
 **Plus de 2000 position d'accord en schéma. Filtrable par fondamentale, par type d'accord et par position.**
 
