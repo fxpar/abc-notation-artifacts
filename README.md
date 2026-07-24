@@ -1,11 +1,11 @@
-# abc-notation-artifacts
+# Outils musicaux
 
-Liste de petits outils pour aider à travailler un instrument ou à éditer ses partitions. (en abc ou non).
+Liste de petits outils pour aider à travailler un instrument ou à éditer ses partitions. Certains outils sont basés sur la "notation abc" pour la musique. 
 
 ## Metronome graduel
 👉 [metronome-graduel](metronome-graduel.html) 
 
-**Un métronome "geek" pour s'entrainer en accélérant (ou en décélérant), soit de manière simple, soit en utilisant des formules complexe: rester 3 mesures au même tempo, accélerer les 4 suivantes, revenir à un rythme intermédiaire...**
+**Un métronome "geek" pour s'entrainer en accélérant (ou en décélérant), soit de manière simple, soit en utilisant des formules complexes: rester 3 mesures au même tempo, accélerer de 5bpm les 4 suivantes, revenir à un rythme intermédiaire...**
 
 
 |Fonctionnalité|Statut|
@@ -20,7 +20,7 @@ Liste de petits outils pour aider à travailler un instrument ou à éditer ses 
 |Responsive mobile/desktop|✅|
 |Icônes Bootstrap modernes|✅|
 
-Librairies utilisé: 
+Librairies utilisées: 
 * bootstrap
 * boostrap-icons
 
@@ -39,7 +39,7 @@ Paramètres:
 * Triable par Gamme ou par type d'accord
 * Mode jour / nuit
 
-Librairies utilisé: 
+Librairies utilisées: 
 * [uke chord](https://github.com/pianosnake/uke-chord)(MIT Licence)
 * [chord-db](https://github.com/tombatossals/chords-db) (MIT licence) 
 * bootstrap
@@ -60,7 +60,7 @@ Paramètres:
 * marche / Arrêt (boucle infinie)
 * Mode Jour / Nuit
 
-Librairies utilisé: 
+Librairies utilisées: 
 * pianosnake uke chord
 * bootstrap
 
@@ -82,7 +82,7 @@ Paramètres:
 
 L'outil n'identifie pas si l'accord est bien joué ou non. 
 
-Librairies utilisé: 
+Librairies utilisées: 
 * pianosnake uke chord
 * bootstrap
 
